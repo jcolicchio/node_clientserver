@@ -41,7 +41,7 @@ var render = function() {
 		GLPlayer.position.x = Aplayer.position.x;
 		GLPlayer.position.y = Aplayer.position.y;
 	} else {
-		console.log(Aplayer);
+		//console.log(Aplayer);
 	}
 
 	//take a list, remove self from it
@@ -113,11 +113,11 @@ $(document).ready(function(){
 				//necessary?
 				if(found) {
 					Aplayer.input = playerInput;
-					console.log("found");
-					console.log(player);
+					//console.log("found");
+					//console.log(Aplayer);
 				} else {
 					Aplayer = null;
-					console.log("lost");
+					//console.log("lost");
 					//ask who i am?
 				}
 			}
