@@ -9,8 +9,7 @@ var GoBoard = require('./GoBoard.js');
 var Command = require('./Command.js');
 var NetworkedGoBoard = require('./NetworkedGoBoard.js');
 var ServerExchange = require('./ServerExchange.js');
-
-var targetPort = 8080;
+var Settings = require('./Settings.js');
 
 http.createServer(function (request, response) {
   var uri = url.parse(request.url).pathname
@@ -39,17 +38,16 @@ http.createServer(function (request, response) {
       response.end();
     });
   });
-}).listen(targetPort);
+}).listen(Settings.webPort);
 
 
-console.log("Server running at http://127.0.0.1:"+targetPort+"/");
+console.log("Server running at http://127.0.0.1:"+Settings.webPort+"/");
 
 var board = NetworkedGoBoard.new(null, null, GoBoard.new(11), []);
 
 var names = ["dingus", "testplayer"];
 
-//let's make a ws server running on some port, idk, 12345
-var server = ws.createServer({port:12345}, function (connection) {
+var server = ws.createServer({port:Settings.socketPort}, function (connection) {
 	this.addConnectionWithName(connection, board.players.length < names.length ? names[board.players.length] : "specN");
 	
 	connection.onmessage = function(event) {
@@ -122,6 +120,8 @@ var server = ws.createServer({port:12345}, function (connection) {
 		server.broadcast(JSON.stringify(exc));
 	};
 });
+
+
 //server.players = [];
 server.connections = [];
 server.nextPlayerId = 0;

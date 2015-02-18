@@ -4,7 +4,16 @@ var playerSelf = null;
 var connected = false;
 var playerList = null;
 
+var Settings = this['Settings'];
+	
+if(Settings === undefined) {
+	console.log(this['Settings']);
+	Settings = require('./Settings.js');
+}
+
 $(document).ready(function(){
+
+
 	
 	//board = GoBoard.default();
 
@@ -210,7 +219,7 @@ $(document).ready(function(){
 	});
 
 	
-	connection = new WebSocket("ws://"+window.location.hostname+":12345")
+	connection = new WebSocket("ws://"+window.location.hostname+":"+Settings.socketPort)
 	connection.onopen = function () {
 		console.log("Connection opened");
 		//ask who i am?
