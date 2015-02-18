@@ -10,6 +10,8 @@ var Command = require('./Command.js');
 var NetworkedGoBoard = require('./NetworkedGoBoard.js');
 var ServerExchange = require('./ServerExchange.js');
 
+var targetPort = 8080;
+
 http.createServer(function (request, response) {
   var uri = url.parse(request.url).pathname
     , filename = path.join(process.cwd(), uri);
@@ -37,10 +39,10 @@ http.createServer(function (request, response) {
       response.end();
     });
   });
-}).listen(80);
+}).listen(targetPort);
 
 
-console.log("Server running at http://127.0.0.1:80/");
+console.log("Server running at http://127.0.0.1:"+targetPort+"/");
 
 var board = NetworkedGoBoard.new(null, null, GoBoard.new(11), []);
 
