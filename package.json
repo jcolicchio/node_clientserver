@@ -1,0 +1,7 @@
+{
+	"name": "NodeClientServer",
+	"version": "0.0.1",
+	"description": "Shared code between client and server",
+	"main": "server.js",
+	"repository": { "type": "git", "url": "http://github.com/jcolicchio/node_clientserver/" }
+}
