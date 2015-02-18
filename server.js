@@ -1,9 +1,9 @@
 var ws = require('ws');
 
 var Player = require('./Player.js');
-var GoBoard = require('./GoBoard.js');
-var Command = require('./Command.js');
-var NetworkedGoBoard = require('./NetworkedGoBoard.js');
+var GameState = require('./GameState.js');
+var Input = require('./Input.js');
+//var NetworkedGoBoard = require('./NetworkedGoBoard.js');
 var ServerExchange = require('./ServerExchange.js');
 var Settings = require('./Settings.js');
 var GenericServer = require('./GenericServer.js');
@@ -11,7 +11,8 @@ var GenericServer = require('./GenericServer.js');
 GenericServer.init(Settings.webPort);
 
 
-var board = NetworkedGoBoard.new(null, null, GoBoard.new(11), []);
+//var board = NetworkedGoBoard.new(null, null, GoBoard.new(11), []);
+var board = GameState.new();
 
 var names = ["dingus", "testplayer"];
 
@@ -20,13 +21,13 @@ var server = ws.createServer({port:Settings.socketPort}, function (connection) {
 	
 	connection.onmessage = function(event) {
 		var str = event.data;
-		console.log("player "+connection.player.id+" said "+str);
+		//console.log("player "+connection.player.id+" said "+str);
 		
-		console.log("new, now we're processing it!");
+		//console.log("new, now we're processing it!");
 		var exc = ServerExchange.import(str);
 		if(exc.type == ServerExchange.TYPE.GOBOARD) {
 			if(exc.key == ServerExchange.KEY.GOBOARD.STATE) {
-			console.log("player "+connection.player.name+" wants board state");
+			//console.log("player "+connection.player.name+" wants board state");
 			var response = server.exchangeForBoard(board);
 			connection.send(JSON.stringify(response));
 			} else if(exc.key == ServerExchange.KEY.GOBOARD.SWITCH || exc.key == ServerExchange.KEY.GOBOARD.RESET) {
@@ -37,7 +38,7 @@ var server = ws.createServer({port:Settings.socketPort}, function (connection) {
 						board.whitePlayer = board.blackPlayer;
 						board.blackPlayer = player;
 					}
-					board.board.init();
+					//board.board.init();
 					server.broadcast(JSON.stringify(server.exchangeForBoard(board)));
 				}
 			} else if(exc.key == ServerExchange.KEY.GOBOARD.LEAVE) {
@@ -48,7 +49,7 @@ var server = ws.createServer({port:Settings.socketPort}, function (connection) {
 		} else if(exc.type == ServerExchange.TYPE.PLAYER) {
 			if(exc.key == ServerExchange.KEY.PLAYER.SELF) {
 				if(exc.payload !== null && exc.payload !== undefined) {
-					console.log("player "+connection.player.name+" wants to be called "+exc.payload.name);
+					//console.log("player "+connection.player.name+" wants to be called "+exc.payload.name);
 					for(key in board.players) {
 						if(board.players[key].equal(connection.player)) {
 							board.players[key].name = exc.payload.name;
@@ -58,26 +59,26 @@ var server = ws.createServer({port:Settings.socketPort}, function (connection) {
 					connection.player.name = exc.payload.name;
 					server.broadcast(JSON.stringify(server.exchangeForBoard(board)));
 				}
-				console.log("player "+connection.player.name+" wants self player object");
-				connection.send(JSON.stringify(ServerExchange.new(ServerExchange.TYPE.PLAYER, ServerExchange.KEY.PLAYER.SELF, connection.player)));
-			} else if(exc.key == ServerExchange.KEY.PLAYER.OPPONENT) {
-				console.log("player "+connection.player.name+" wants opponent player object");
-			} else if(exc.key == ServerExchange.KEY.PLAYER.LIST) {
-				console.log("player "+connection.player.name+" wants list");
-				//connection.send(JSON.stringify(ServerExchange.new(ServerExchange.TYPE.PLAYER, ServerExchange.KEY.PLAYER.LIST, board.players)));
+				//console.log("player "+connection.player.name+" wants self player object");
+				connection.send(JSON.stringify(server.exchangeForSelfPlayer(connection.player)));
 			}
-		} else if(exc.type == ServerExchange.TYPE.COMMAND) {
-			var response = ServerExchange.new(ServerExchange.TYPE.COMMAND, ServerExchange.KEY.COMMAND.RESPONSE, false);
-			console.log("player "+connection.player.name+" sent command: "+exc.payload.x+", "+exc.payload.y);
-			if(board.players.length >= 2) {
-				var command = exc.payload;
-				command.player = connection.player;
-				var outcome = board.applyCommand(command);
-				response.payload = outcome;
-			}
-			connection.send(JSON.stringify(response));
-			exc = server.exchangeForBoard(board);
-			server.broadcast(JSON.stringify(exc));
+		} else if(exc.type == ServerExchange.TYPE.INPUT) {
+
+			//var response = ServerExchange.new(ServerExchange.TYPE.COMMAND, ServerExchange.KEY.COMMAND.RESPONSE, false);
+			//console.log("player "+connection.player.name+" sent command: "+exc.payload.x+", "+exc.payload.y);
+			//if(board.players.length >= 2) {
+			//	var command = exc.payload;
+			//	command.player = connection.player;
+			//	var outcome = board.applyCommand(command);
+			//	response.payload = outcome;
+			//}
+
+			//connection.send(JSON.stringify(response));
+
+			//exc = server.exchangeForBoard(board);
+			//server.broadcast(JSON.stringify(exc));
+
+			connection.player.input = exc.payload;
 		}
 		
 	};
@@ -95,14 +96,18 @@ server.connections = [];
 server.nextPlayerId = 0;
 server.addConnectionWithName = function(connection, name) {
 	var player = Player.new(this.nextPlayerId++, name);
+	player.position.x = 50;
+	player.position.y = 70;
 	connection.player = player;
 	this.connections.push(connection);
 	
 	this.addPlayer(player);
+
+	connection.send(JSON.stringify(server.exchangeForSelfPlayer(player)));
 };
 server.addPlayer = function(player) {
 	board.players.push(player);
-	if(board.players.length == 1) {
+	/*if(board.players.length == 1) {
 		board.blackPlayer = player;
 	} else if(board.players.length == 2) {
 		if(board.whitePlayer === undefined || board.whitePlayer === null) {
@@ -110,8 +115,10 @@ server.addPlayer = function(player) {
 		} else {
 			board.blackPlayer = player;
 		}
-	}
+	}*/
+
 	this.broadcast(JSON.stringify(this.exchangeForBoard(board)));
+
 	return player;
 };
 server.removeConnection = function(connection) {
@@ -130,25 +137,8 @@ server.removePlayer = function(player) {
 			break;
 		}
 	}
-	if(player.equal(board.whitePlayer)) {
-		board.whitePlayer = null;
-		board.board.init();
-		for(key in board.players) {
-			if(!board.players[key].equal(board.blackPlayer)) {
-				board.whitePlayer = board.players[key];
-				break;
-			}
-		}
-	} else if(player.equal(board.blackPlayer)) {
-		board.blackPlayer = null;
-		board.board.init();
-		for(key in board.players) {
-			if(!board.players[key].equal(board.whitePlayer)) {
-				board.blackPlayer = board.players[key];
-				break;
-			}
-		}
-	}
+	
+	
 }
 server.connectionForPlayer = function(player) {
 	for(connection in this.connections) {
@@ -164,6 +154,22 @@ server.broadcast = function(str) {
 		connection.send(str);
 	});
 }
+
 server.exchangeForBoard = function(board) {
-	return ServerExchange.new(ServerExchange.TYPE.GOBOARD, ServerExchange.KEY.GOBOARD.STATE, board);
+	return ServerExchange.new(ServerExchange.TYPE.GAMESTATE, ServerExchange.KEY.GAMESTATE.STATE, board);
 }
+server.exchangeForSelfPlayer = function(player) {
+	return ServerExchange.new(ServerExchange.TYPE.PLAYER, ServerExchange.KEY.PLAYER.SELF, player);
+}
+
+//game loop time?
+
+setInterval(function(){
+	board.update();
+}, 1000/40);
+
+//every 10 ms, send the updated game state to all clients
+setInterval(function(){
+	server.broadcast(JSON.stringify(server.exchangeForBoard(board)))
+	;
+}, 1000/20);

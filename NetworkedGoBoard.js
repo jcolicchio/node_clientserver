@@ -1,9 +1,9 @@
 (function(exports){
 	var NetworkedGoBoard = {};
 
-	var GoBoard = this['GoBoard'];	
-	if(GoBoard === undefined) {
-		GoBoard = require('./GoBoard.js');
+	var GameState = this['GameState'];	
+	if(GameState === undefined) {
+		GameState = require('./GameState.js');
 	}
 	var Player = this['Player'];
 	if(Player === undefined) {
@@ -18,9 +18,9 @@
 			players: players,
 			applyCommand: function(cmd) {
 				if(cmd.player.equal(this.whitePlayer)) {
-					return board.placePiece(GoBoard.TEAM.WHITE, cmd.x, cmd.y);
+					return board.placePiece(GameState.TEAM.WHITE, cmd.x, cmd.y);
 				} else if(cmd.player.equal(this.blackPlayer)) {
-					return board.placePiece(GoBoard.TEAM.BLACK, cmd.x, cmd.y);
+					return board.placePiece(GameState.TEAM.BLACK, cmd.x, cmd.y);
 				} else {
 					console.log("not an active player:");
 					console.log(cmd.player);
@@ -41,7 +41,7 @@
 		for(key in ngb.players) {
 			newList.push(Player.copy(ngb.players[key]));
 		}
-		return NetworkedGoBoard.new(Player.copy(ngb.whitePlayer), Player.copy(ngb.blackPlayer), GoBoard.copy(ngb.board), newList);
+		return NetworkedGoBoard.new(Player.copy(ngb.whitePlayer), Player.copy(ngb.blackPlayer), GameState.copy(ngb.board), newList);
 	}
 	NetworkedGoBoard.import = function(json) {
 		return NetworkedGoBoard.copy(JSON.parse(json));
