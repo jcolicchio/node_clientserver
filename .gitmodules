@@ -1,0 +1,3 @@
+[submodule "webgl_thingy"]
+	path = webgl_thingy
+	url = http://github.com/jcolicchio/webgl_thingy

@@ -14,13 +14,13 @@
 				this.keySwitch(keyCode, false);
 			},
 			keySwitch: function(keyCode, value) {
-				if(keyCode == 38) {
+				if(keyCode == 38 || keyCode == 87) {
 					this.keys.up = value;
-				} else if(keyCode == 40) {
+				} else if(keyCode == 40 || keyCode == 83) {
 					this.keys.down = value;
-				} else if(keyCode == 37) {
+				} else if(keyCode == 37 || keyCode == 65) {
 					this.keys.left = value;
-				} else if(keyCode == 39) {
+				} else if(keyCode == 39 || keyCode == 68) {
 					this.keys.right = value;
 				}
 			}

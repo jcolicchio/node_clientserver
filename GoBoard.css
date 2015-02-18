@@ -1,41 +1,7 @@
-#board {
-	background: #999;
-	display: inline-block;
-	padding: 5px;
-}
-.row {
-	display: block;
-	height: 50px;
-}
-.cell {
-	width: 50px;
-	height: 50px;
-	display: inline-block;
-	position: relative;
-}
-.cell.black {
-	background: black;
-	border-radius: 100%;
-}
-.cell.white {
-	background: white;
-	border-radius: 100%;
-}
-.row .cell:not(.white):not(.black)::before, .row .cell:not(.white):not(.black)::after {
-	display: block;
-	content: '';
+#canvas {
 	position: absolute;
-	background: #666;
-}
-.row .cell:not(.white):not(.black)::before {
-	left: 0;
-	right: 0;
-	top: 48%;
-	bottom: 48%;
-}
-.row .cell:not(.white):not(.black)::after {
-	left: 48%;
-	right: 48%;
-	top: 0;
-	bottom: 0;
+	top: 50%; left: 50%;
+	width: 800px;
+	height: 500px;
+	margin: -250px 0 0 -400px;
 }

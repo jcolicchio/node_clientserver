@@ -55,7 +55,7 @@
 			if(exc.type == ServerExchange.TYPE.GAMESTATE) {
 				//console.log("about to copy");
 				payload = GameState.copy(exc.payload); //NetworkedGoBoard.copy(exc.payload);
-				console.log(payload);
+				//console.log(payload);
 			} else if(exc.type == ServerExchange.TYPE.INPUT && exc.key == ServerExchange.KEY.INPUT.REQUEST) {
 				payload = Input.copy(exc.payload);
 
