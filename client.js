@@ -48,17 +48,140 @@ var update = function() {
 
 var render = function() {
 	
+
 	if(Aplayer) {
 		GLPlayer.position.x = Aplayer.position.x;
 		GLPlayer.position.y = Aplayer.position.y;
 		GLPlayer.position.z = Aplayer.position.z;
+
+		//calculate distance between camera's position and player's
+		//if it's > 3, move cam to be on that imaginary player bubble
+		//then tilt camera down to face player
+		var playerHeight = 4;
+		var camOverShoulder = 2;
+		var delta = {
+			x: GLPlayer.camera.position.x - GLPlayer.position.x,
+			y: GLPlayer.camera.position.y - GLPlayer.position.y, 
+			// the focus point is the snowman's head area, not his feet
+			z: GLPlayer.camera.position.z - (GLPlayer.position.z + camOverShoulder),
+		}
+		//maybe instead, we fix Z to playerHeight + some
+		var dist = Math.sqrt(delta.x*delta.x + delta.y*delta.y + delta.z*delta.z);
+		var maxDist = 30;
+		var minDist = 10;
+		var positionEasing = 1;
+		var angleEasing = 1;
+		var factor = 1;
+		if(dist > maxDist) {
+			//factor = maxDist/dist;
+			/*GLPlayer.camera.position.x = GLPlayer.position.x;
+			GLPlayer.camera.position.y = GLPlayer.position.y;
+			GLPlayer.camera.position.z = GLPlayer.position.z + 4;*/
+
+			factor = maxDist/dist;
+			delta.x *= factor;
+			delta.y *= factor;
+			//delta.z = 0;
+
+
+			//GLPlayer.camera.position.x += (GLPlayer.position.x + delta.x*factor - GLPlayer.camera.position.x)/positionEasing;
+			//GLPlayer.camera.position.y += (GLPlayer.position.y + delta.y*factor - GLPlayer.camera.position.y)/positionEasing;
+
+			//allow pulling camera in the z dist? not with mostly fixed z
+			/*if(dist > maxDist) {
+				GLPlayer.camera.position.z += (GLPlayer.position.z + delta.z*factor + playerHeight - GLPlayer.camera.position.z)/easing;
+			} else {
+				GLPlayer.camera.position.z += Math.abs(GLPlayer.position.z + delta.z*factor + playerHeight - GLPlayer.camera.position.z)/easing+0.1;
+			}*/
+		}
+
+		//if we're in the inner sanctum, adjust z
+		if(Math.sqrt(delta.x*delta.x+delta.y*delta.y) < minDist) {
+			//so we know the hypotenuse = minDist
+			//var hypotenuse = minDist;
+			//deltax^2 + deltay^2 + deltaz^2 = hypotenuse^2
+			//the amount to raise z over its default = 
+			var squaredValue = minDist*minDist - delta.x*delta.x - delta.y*delta.y;
+			if(squaredValue > 0) {
+				delta.z = Math.sqrt(squaredValue);
+			} else {
+				delta.z = 0;
+			}
+			//GLPlayer.camera.position.z += (GLPlayer.position.z + playerHeight + 2 + deltaZ - GLPlayer.camera.position.z)/positionEasing;
+		} else {
+			delta.z = 0;
+		}
+
+		if(dist < minDist || dist > maxDist) {
+			GLPlayer.camera.position.x += (GLPlayer.position.x + delta.x - GLPlayer.camera.position.x)/positionEasing;
+			GLPlayer.camera.position.y += (GLPlayer.position.y + delta.y - GLPlayer.camera.position.y)/positionEasing;
+
+			//shouldn't we always be trying to get here?
+			//GLPlayer.camera.position.z += (GLPlayer.position.z + camOverShoulder + delta.z - GLPlayer.camera.position.z)/positionEasing;
+			
+		}
+		GLPlayer.camera.position.z += (GLPlayer.position.z + camOverShoulder + delta.z - GLPlayer.camera.position.z)/positionEasing;
+
+		
+		//make the camera's z position go towards pos + cam + 
+		
+
+
+		//now, we assume delta is how much they want to change by
+		
+		//GLPlayer.camera.position.z += (GLPlayer.position.z + playerHeight + 2 - GLPlayer.camera.position.z)/positionEasing;
+		//console.log(GLPlayer.camera.position.z);
+
+			var targetAngle = 0;
+			if(delta.x == 0) {
+				if(delta.y > 0) {
+					targetAngle = 0;
+				} else {
+					targetAngle = Math.PI;
+				}
+			} else {
+				targetAngle = Math.atan(delta.y/delta.x)+Math.PI/2;//+Math.PI/2;
+				if(targetAngle < 0) {
+					targetAngle += Math.PI;
+				}
+				if(delta.x >= 0) {
+					targetAngle += Math.PI;
+				}
+			}
+			if(targetAngle > Math.PI*2) {
+				targetAngle -= Math.PI*2;
+			}
+			//console.log("ta: "+targetAngle);
+			if(Math.abs(GLPlayer.camera.rotation.horizontal - targetAngle) > Math.PI) {
+				if(targetAngle > Math.PI) {
+					targetAngle -= Math.PI*2;
+				} else {
+					targetAngle += Math.PI*2;
+				}
+			}
+			GLPlayer.camera.rotation.horizontal += (targetAngle - GLPlayer.camera.rotation.horizontal)/angleEasing;
+			GLPlayer.camera.rotation.horizontal %= Math.PI*2;
+
+			delta.x = GLPlayer.position.x - GLPlayer.camera.position.x;
+			delta.y = GLPlayer.position.y - GLPlayer.camera.position.y;
+			delta.z = GLPlayer.position.z + camOverShoulder - GLPlayer.camera.position.z;
+
+			var landDist = Math.sqrt(delta.x*delta.x + delta.y*delta.y);
+			GLPlayer.camera.rotation.vertical = -Math.atan2(delta.z, landDist);
+			
+			
+			//GLPlayer.camera.rotation.vertical = 
+		//}
+
+		
+
 	} else {
 		//console.log(Aplayer);
 	}
 
 	if(!fakeClient) {
 		//take a list, remove self from it
-		var others = [];
+		/*var others = [];
 		if(state) {
 			for(key in state.players) {
 				if(!state.players[key].equal(Aplayer)) {
@@ -68,7 +191,8 @@ var render = function() {
 
 		}
 
-		drawScene(others);
+		drawScene(others);*/
+		drawScene(state.players);
 	}
 
 	//2d debug stuff?
@@ -81,6 +205,9 @@ var render = function() {
 			var player = state.players[key];
 			ctx.fillRect(player.position.x*2-10+200, player.position.y*2-10+200, 20, 20);
 		}
+
+		ctx.fillStyle = "green";
+		ctx.fillRect(GLPlayer.camera.position.x*2-10+200, GLPlayer.camera.position.y*2-10+200, 20, 20);
 	}
 }
 
@@ -220,6 +347,10 @@ $(document).ready(function(){
         GLPlayer.rotation.horizontal = (mouseX*Math.PI)*2;
         GLPlayer.rotation.vertical = (mouseY*Math.PI);
         playerInput.angle = GLPlayer.rotation.horizontal;
+
+        //update camera
+        //GLPlayer.camera.rotation.horizontal = GLPlayer.rotation.horizontal;
+        //GLPlayer.camera.rotation.vertical = GLPlayer.rotation.vertical;
     };
 
 
