@@ -17,7 +17,7 @@ var board = GameState.new();
 var names = ["dingus", "testplayer"];
 
 var serverClockRate = 40;
-var serverBlastRate = 3;
+var serverBlastRate = 20;
 
 var server = ws.createServer({port:Settings.socketPort}, function (connection) {
 	this.addConnectionWithName(connection, board.players.length < names.length ? names[board.players.length] : "specN");
