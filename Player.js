@@ -17,8 +17,8 @@
 				}
 				return (this.id == player.id && this.name == player.name /*&& this.connection == player.connection*/);
 			},
-			position: {x: 0.0, y: 0.0},
-			velocity: {x: 0.0, y: 0.0},
+			position: {x: 0.0, y: 0.0, z:0.0},
+			velocity: {x: 0.0, y: 0.0, z:0.0},
 			input: Input.new(),
 			update: function() {
 				//add velocity to position
@@ -27,11 +27,15 @@
 
 				this.position.x += this.velocity.x;
 				this.position.y += this.velocity.y;
+				this.position.z += this.velocity.z;
 
 				var speed = 0.2;
 				var friction = 0.6;
 				this.velocity.x *= friction;
 				this.velocity.y *= friction;
+				if(this.position.z > 0 || this.velocity.z != 0) {
+					this.velocity.z -= 0.06;
+				}
 
 				if(this.input.keys.up) { // w
                     this.velocity.x += Math.sin(this.input.angle)*speed;
@@ -50,6 +54,17 @@
                     this.velocity.x += Math.cos(this.input.angle)*speed;
                     this.velocity.y += Math.sin(this.input.angle)*speed;
                 }
+
+                if(this.input.keys.jump) {
+                	if(this.position.z <= 0) {
+                		this.velocity.z = 0.7;
+                	}
+                }
+                if(this.position.z < 0) {
+            		this.position.z = 0;
+            		this.velocity.z = 0;
+                }
+
 			}
 		};
 		return player;

@@ -1,7 +1,7 @@
 (function(exports){
 	Input = {};
 
-	var defaultKeys = {up: false, down: false, left: false, right: false};
+	var defaultKeys = {up: false, down: false, left: false, right: false, jump: false};
 	
 	Input.new = function(keys, angle) {
 		var cmd = {
@@ -22,6 +22,9 @@
 					this.keys.left = value;
 				} else if(keyCode == 39 || keyCode == 68) {
 					this.keys.right = value;
+				}
+				if(keyCode == 32) {
+					this.keys.jump = value;
 				}
 			}
 		};

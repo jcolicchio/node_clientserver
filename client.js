@@ -27,7 +27,7 @@ var playerInput;
 var fakeClient = false;
 
 var localUpdateRate = 40;
-var clientInputTransmissionRate = 20;
+var clientInputTransmissionRate = 30;
 
 var update = function() {
 	if(Aplayer && state) {
@@ -51,6 +51,7 @@ var render = function() {
 	if(Aplayer) {
 		GLPlayer.position.x = Aplayer.position.x;
 		GLPlayer.position.y = Aplayer.position.y;
+		GLPlayer.position.z = Aplayer.position.z;
 	} else {
 		//console.log(Aplayer);
 	}
