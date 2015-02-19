@@ -17,11 +17,17 @@ var ctx;
 
 //var state = GameState.new();
 var state;
+//var prevState;
 
 var Aplayer;// = Player.new(1, "dingus");
 var playerInput;
 
 //state.players.push(player);
+
+var fakeClient = false;
+
+var localUpdateRate = 40;
+var clientInputTransmissionRate = 20;
 
 var update = function() {
 	if(Aplayer && state) {
@@ -32,6 +38,11 @@ var update = function() {
 	thingerRotation += Math.PI/40.0;
     if(thingerRotation > Math.PI*2) {
         thingerRotation -= Math.PI*2;
+    }
+
+    if(fakeClient) {
+    	playerInput.angle += Math.PI/64;
+    	playerInput.keys.up = true;
     }
 }
 
@@ -44,32 +55,45 @@ var render = function() {
 		//console.log(Aplayer);
 	}
 
-	//take a list, remove self from it
-	var others = [];
-	if(state) {
-		for(key in state.players) {
-			if(!state.players[key].equal(Aplayer)) {
-				others.push(state.players[key]);
+	if(!fakeClient) {
+		//take a list, remove self from it
+		var others = [];
+		if(state) {
+			for(key in state.players) {
+				if(!state.players[key].equal(Aplayer)) {
+					others.push(state.players[key]);
+				}
 			}
+
 		}
 
+		drawScene(others);
 	}
-	drawScene(others);
 
 	//2d debug stuff?
-	//ctx.fillStyle = "black";
-	//ctx.fillRect(0, 0, 800, 500);
+	ctx.fillStyle = "black";
+	ctx.fillRect(0, 0, 400, 400);
 
 	if(state) {
-		//ctx.fillStyle = "red";
+		ctx.fillStyle = "red";
 		for(key in state.players) {
 			var player = state.players[key];
-			//ctx.fillRect(player.position.x-10 + 400, player.position.y-10 + 250, 20, 20);
+			ctx.fillRect(player.position.x*2-10+200, player.position.y*2-10+200, 20, 20);
 		}
 	}
 }
 
 $(document).ready(function(){
+
+	if(fakeClient) {
+		$('body').on('click', '#clientbutton', function(){
+			fakeClient = false;
+			$(this).hide();
+			playerInput.keys.up = false;
+		});
+	} else {
+		$('#clientbutton').hide();
+	}
 
 	canvas = $('#canvas')[0];
 	canvas2D = $('#2dcanvas')[0];
@@ -99,7 +123,19 @@ $(document).ready(function(){
 		var exc = ServerExchange.import(event.data);
 		if(exc.type == ServerExchange.TYPE.GAMESTATE) {
 			//console.log("got game state");
+			//prevState = state;
 			state = exc.payload;
+			/*if(state && prevState) {
+				for(current in state.players) {
+					for(previous = prevState.players) {
+						if(state.players[current].equal(prevState.players[previous])) {
+							//we found a match!
+							state.players[current].prevPlayer = prevState.players[previous];
+							break;
+						}
+					}
+				}
+			}*/
 			if(Aplayer) {
 				var found = false;
 				for(key in state.players) {
@@ -160,14 +196,14 @@ $(document).ready(function(){
 	setInterval(function(){
 		update();
 		render();
-	}, 1000/40);
+	}, 1000/localUpdateRate);
 
 	//at 10 fps, send your input to the server
 	setInterval(function(){
 		if(playerInput) {
 			connection.send(JSON.stringify(ServerExchange.new(ServerExchange.TYPE.INPUT, ServerExchange.KEY.INPUT.REQUEST, playerInput)));
 		}
-	}, 1000/20);
+	}, 1000/clientInputTransmissionRate);
 
 
     var mouseX = 0.0;

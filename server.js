@@ -16,6 +16,9 @@ var board = GameState.new();
 
 var names = ["dingus", "testplayer"];
 
+var serverClockRate = 40;
+var serverBlastRate = 3;
+
 var server = ws.createServer({port:Settings.socketPort}, function (connection) {
 	this.addConnectionWithName(connection, board.players.length < names.length ? names[board.players.length] : "specN");
 	
@@ -96,8 +99,8 @@ server.connections = [];
 server.nextPlayerId = 0;
 server.addConnectionWithName = function(connection, name) {
 	var player = Player.new(this.nextPlayerId++, name);
-	player.position.x = 50;
-	player.position.y = 70;
+	player.position.x = 0;
+	player.position.y = 10;
 	connection.player = player;
 	this.connections.push(connection);
 	
@@ -166,10 +169,10 @@ server.exchangeForSelfPlayer = function(player) {
 
 setInterval(function(){
 	board.update();
-}, 1000/40);
+}, 1000/serverClockRate);
 
 //every 10 ms, send the updated game state to all clients
 setInterval(function(){
 	server.broadcast(JSON.stringify(server.exchangeForBoard(board)))
 	;
-}, 1000/20);
+}, 1000/serverBlastRate);

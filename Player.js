@@ -28,27 +28,27 @@
 				this.position.x += this.velocity.x;
 				this.position.y += this.velocity.y;
 
-				var speed = 0.1;
-				var friction = 0.8;
+				var speed = 0.2;
+				var friction = 0.6;
 				this.velocity.x *= friction;
 				this.velocity.y *= friction;
 
 				if(this.input.keys.up) { // w
-                    this.velocity.x -= Math.sin(this.input.angle)*speed;
-                    this.velocity.y += Math.cos(this.input.angle)*speed;
+                    this.velocity.x += Math.sin(this.input.angle)*speed;
+                    this.velocity.y -= Math.cos(this.input.angle)*speed;
                     //console.log(this.input.angle+", "+this.velocity.x+", "+this.velocity.y);
                 }
                 if(this.input.keys.down) { // s
-                    this.velocity.x += Math.sin(this.input.angle)*speed;
-                    this.velocity.y -= Math.cos(this.input.angle)*speed;
+                    this.velocity.x -= Math.sin(this.input.angle)*speed;
+                    this.velocity.y += Math.cos(this.input.angle)*speed;
                 }
                 if(this.input.keys.left) { // a
-                    this.velocity.x += Math.cos(this.input.angle)*speed;
-                    this.velocity.y += Math.sin(this.input.angle)*speed;
-                }
-                if(this.input.keys.right) { // d
                     this.velocity.x -= Math.cos(this.input.angle)*speed;
                     this.velocity.y -= Math.sin(this.input.angle)*speed;
+                }
+                if(this.input.keys.right) { // d
+                    this.velocity.x += Math.cos(this.input.angle)*speed;
+                    this.velocity.y += Math.sin(this.input.angle)*speed;
                 }
 			}
 		};

@@ -1,6 +1,6 @@
 <html>
 	<head>
-		<link rel="stylesheet" type="text/css" href="GoBoard.css" />
+		<!--<link rel="stylesheet" type="text/css" href="GoBoard.css" />-->
 		<script type="text/javascript" src="jquery.min.js"></script>
 
 		<script type="text/javascript" src="Settings.js"></script>
@@ -23,7 +23,7 @@
         <script type="text/javascript" src="webgl_thingy/GLPyramid.js"></script>
         <script type="text/javascript" src="webgl_thingy/GLCube.js"></script>
 
-		<link rel="stylesheet" type="text/css" href="webgl_thingy/GL.css" />
+		<!--<link rel="stylesheet" type="text/css" href="webgl_thingy/GL.css" />-->
         
 
         <script id="shader-vs" type="x-shader/x-vertex">
@@ -115,7 +115,8 @@
 
 	</head>
 	<body>
+        <input type='submit' value='Enable' id='clientbutton' />
 		<canvas id='canvas' width='800' height='500'></canvas>
-		<canvas id='2dcanvas' width='800' height='500'></canvas>
+		<canvas id='2dcanvas' width='400' height='400'></canvas>
 	</body>
 </html>
