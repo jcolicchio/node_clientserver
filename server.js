@@ -10,7 +10,9 @@ var GenericServer = require('./GenericServer.js');
 
 GenericServer.init(Settings.webPort);
 
-
+//TODO(sitem): We need to move all the game logic and references here as
+//             well. Possibly to GoBoard. Server's code should be as
+//             generic as possible.
 var board = NetworkedGoBoard.new(null, null, GoBoard.new(11), []);
 
 var names = ["dingus", "testplayer"];

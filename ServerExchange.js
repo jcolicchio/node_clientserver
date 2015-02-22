@@ -19,6 +19,7 @@
 	
 	var ServerExchange = {};
 
+    //TODO(sitem): Clean this up. Maybe seal and freeze since we're using them as enums.
 	ServerExchange.TYPE = {};
 	ServerExchange.TYPE.VALUE = 0;
 	ServerExchange.TYPE.GOBOARD= 1;
@@ -48,6 +49,9 @@
 		
 		return exc;
 	};
+    //TODO(sitem): We need to create some sort of way to register things
+    //             such as a NetworkedGoBoard or a Player. We should not
+    //             have things that specific here.
 	ServerExchange.copy = function(exc) {
 		var payload = exc.payload;
 		if(payload !== undefined && payload !== null) {
