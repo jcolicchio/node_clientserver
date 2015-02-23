@@ -81,12 +81,23 @@ var clientList = [];
 var clientSocket = ws.createServer({port:ServerSettings.defaultPort}, function (connection) {
 	// a new client has joined
 	clientList.push(connection);
+
+	// TODO: don't do this immediately...
+	// on connect, add a connection, but don't necessarily add a "player"
+	// until we can verify his oauth identity and, optionally, he gets the password right
 	players.push(connection);
 
+
+	// one thing that we'll have to do if we implement oauth, is ask the client for his oauth token
+	// if he provides it, we need to double-check with gatekeeper to verify the client's identity
+	// this is the mechanic we'll use for identity validation in server games
+
+	// remember there may be a password set in the future, so if there is, we need to ask the user
+	// and if he returns the wrong password, don't even update the server
 	gateKeeper.sendUpdatedInfo();
 
-	//we should ask him for a password if this server uses passwords
-	//and if he doesn't respond with the right password in time, kick him
+	// we should ask him for a password if this server uses passwords
+	// and if he doesn't respond with the right password in time, kick him
 
 	connection.onmessage = function(event) {
 		var exc = ServerExchange.import(event.data);

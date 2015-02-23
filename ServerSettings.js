@@ -17,8 +17,8 @@
 // WinningLength: 5? Maybe this'd go in some more public-facing stuff
 // Maybe that's part of the ServerInfo.js, which gets passed 
 
-exports.name = "Awesome Server";
-exports.defaultPort = 12350;
+exports.name = "Awesome Server 3";
+exports.defaultPort = 12352;
 exports.capacity = 8;
 exports.hasPassword = false;
 
