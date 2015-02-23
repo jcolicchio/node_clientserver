@@ -16,8 +16,14 @@ var server;
 var connectToServer = function(serverInfo) {
 
 	// UI for "connecting...";
+	var clientContent = $("<div id='clientcontent'></div>");
+	$('body').append(clientContent);
+
 	var serverStatus = $("<div id='serverstatus'></div>");
-	$('body').append(serverStatus);
+	clientContent.append(serverStatus).append("<br/>");
+
+	clientContent.append("<div id='chat'></div><br/>");
+	clientContent.append("<input type='text' id='message' /><input type='submit' id='send' value='Send' />");
 
 	setStatus("Connecting...");
 
@@ -30,8 +36,6 @@ var connectToServer = function(serverInfo) {
 		setStatus("Connected! ");
 		// TODO: "disconnect" button
 		$('#serverstatus').append("<input type='submit' id='disconnect' value='Disconnect' />");
-
-		server.send(JSON.stringify(ServerExchange.new("hi", null)));
 		
 		server.connected = true;
 	}
@@ -39,16 +43,26 @@ var connectToServer = function(serverInfo) {
 		console.log("Connection closed");
 		server.connected = false;
 
-		// TODO: re-connect to gatekeeper
-		$('#serverstatus').remove();
+		$('#clientcontent').remove();
 
+		// we disconnected from game, connect to GK again!
 		connectToGateKeeper(connectToServer);
 	}
 	server.onerror = function () {
 		console.error("Connection error");
 	}
 	server.onmessage = function (event) {
-		console.log("game server said: "+event.data);
+		var exc = ServerExchange.import(event.data);
+
+		if(exc.key == "message") {
+			console.log("game server said: "+exc.payload);
+			$('#chat').append(exc.payload+"<br/>");
+		} else if(exc.key == "password") {
+			// the server has a password
+			console.log("whats the password");
+			var pw = prompt("Password?");
+			server.send(JSON.stringify(ServerExchange.new("password", pw)));
+		}
 	}
 }
 
@@ -62,6 +76,11 @@ $(document).ready(function(){
 
 	$('body').on('click', '#disconnect', function(e) {
 		server.close();
+	});
+
+	$('body').on('click', '#send', function(e) {
+		server.send(JSON.stringify(ServerExchange.new("message", $('#message').val())));
+		$('#message').val("");
 	});
 
 	// This is a connection to the GateKeeper

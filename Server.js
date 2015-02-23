@@ -39,6 +39,24 @@ var ServerSettings = require('./ServerSettings.js');
 
 var host = GateKeeperInfo.hostname+":"+GateKeeperInfo.webPort;
 var port = ServerSettings.defaultPort;
+var name = ServerSettings.name;
+var hasPassword = ServerSettings.hasPassword;
+var password = ServerSettings.password;
+
+for(var i=3;i<process.argv.length;i+=2) {
+	var key = process.argv[i-1];
+	var value = process.argv[i];
+	if(key == "-n") {
+		name = value;
+	} else if(key == "-g") {
+		host = value
+	} else if(key == "-p") {
+		port = value;
+	} else if(key == "-s") {
+		hasPassword = true;
+		password = value;
+	}
+}
 
 if(process.argv.length > 2) {
 	// if it has a ., it's an IP
@@ -89,12 +107,12 @@ gateKeeper.on('message', function (event) {
 });
 gateKeeper.sendUpdatedInfo = function() {
 	var info = ServerInfo.new(
-		ServerSettings.name, 
+		name, 
 		null, // the IP will be filled in on the other side where it's easily accessible
 		port, 
 		players.length, 
 		ServerSettings.capacity, 
-		ServerSettings.hasPassword);
+		hasPassword);
 
 	console.log("about to send smart object with server: "+info.serverString());
 
@@ -110,32 +128,66 @@ gateKeeper.connect();
 var clientList = [];
 var players = [];
 
+var chatHistory = [];
+var maxChatLength = 5;
+
 var clientSocket = ws.createServer({port:port}, function (connection) {
 	// a new client has joined
 	clientList.push(connection);
 
-	// TODO: don't do this immediately...
-	// on connect, add a connection, but don't necessarily add a "player"
-	// until we can verify his oauth identity and, optionally, he gets the password right
-	players.push(connection);
+	if(hasPassword) {
+		connection.send(JSON.stringify(ServerExchange.new("password", null)));
+	} else {
+
+		// TODO: don't do this immediately...
+		// on connect, add a connection, but don't necessarily add a "player"
+		// until we can verify his oauth identity and, optionally, he gets the password right
+		players.push(connection);
 
 
-	// one thing that we'll have to do if we implement oauth, is ask the client for his oauth token
-	// if he provides it, we need to double-check with gatekeeper to verify the client's identity
-	// this is the mechanic we'll use for identity validation in server games
+		// one thing that we'll have to do if we implement oauth, is ask the client for his oauth token
+		// if he provides it, we need to double-check with gatekeeper to verify the client's identity
+		// this is the mechanic we'll use for identity validation in server games
 
-	// remember there may be a password set in the future, so if there is, we need to ask the user
-	// and if he returns the wrong password, don't even update the server
-	gateKeeper.sendUpdatedInfo();
+		// remember there may be a password set in the future, so if there is, we need to ask the user
+		// and if he returns the wrong password, don't even update the server
+		gateKeeper.sendUpdatedInfo();
 
-	// we should ask him for a password if this server uses passwords
-	// and if he doesn't respond with the right password in time, kick him
+		// we should ask him for a password if this server uses passwords
+		// and if he doesn't respond with the right password in time, kick him
+
+		for(key in chatHistory) {
+			connection.send(chatHistory[key]);
+		}
+	}
 
 	connection.onmessage = function(event) {
 		var exc = ServerExchange.import(event.data);
 
-		// for now just parrot it back
-		connection.send(event.data);
+		if(exc.key == "message") {
+
+			if(connection.authorized || !hasPassword) {
+				chatHistory.push(event.data);
+				clientSocket.broadcast(event.data);
+			}
+
+		} else if(exc.key == "password") {
+			// make sure they got the right pw
+			if(exc.payload == password) {
+				// note this is repeated code, refactor this
+				// TODO: refactor player auth/connection to its own event
+				connection.authorized = true;
+				players.push(connection);
+				gateKeeper.sendUpdatedInfo();
+				for(key in chatHistory) {
+					connection.send(chatHistory[key]);
+				}
+			} else {
+				//reject them! ask again or drop!
+				connection.send(JSON.stringify(ServerExchange.new("password", null)));
+			}
+		}
+
 	};
 
 	connection.onclose = function() {
