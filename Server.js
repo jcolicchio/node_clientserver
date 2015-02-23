@@ -34,13 +34,11 @@ var players = [];
 //connect to the gatekeeper
 gateKeeper = io.connect('http://'+GateKeeperInfo.hostname+':'+GateKeeperInfo.webPort);
 gateKeeper.on('connect', function () {
-	console.log("Connection opened");
 	// as a server, when we connect to gatekeeper, we should inform him of our info
 	// he'll ask anyway though, so let's leave this for now
 });
 
 gateKeeper.on('disconnect', function () {
-	console.log("Connection closed");
 	// connection to the server went down
 	// TODO: alert current players, and try to re-connect?
 
@@ -53,22 +51,26 @@ gateKeeper.on('message', function (event) {
 	var exc = ServerExchange.import(event);
 
 	if(exc.key == "ServerInfo") {
-		// gate keeper is asking for a heartbeat, send him our info
-		var info = ServerInfo.new(
-			ServerSettings.name, 
-			null, // the IP will be filled in on the other side where it's easily accessible
-			ServerSettings.defaultPort, 
-			players.length, 
-			ServerSettings.capacity, 
-			ServerSettings.hasPassword);
+		
+		gateKeeper.sendUpdatedInfo();
 
-		console.log("about to send smart object with server: "+info.serverString());
-
-		gateKeeper.emit("message", JSON.stringify(ServerExchange.new("ServerInfo", info)));
 	} else {
 		console.log("unknown message type: "+exc.key+" sent to server from gatekeeper, with payload: "+JSON.stringify(exc.payload));
 	}
 });
+gateKeeper.sendUpdatedInfo = function() {
+	var info = ServerInfo.new(
+		ServerSettings.name, 
+		null, // the IP will be filled in on the other side where it's easily accessible
+		ServerSettings.defaultPort, 
+		players.length, 
+		ServerSettings.capacity, 
+		ServerSettings.hasPassword);
+
+	console.log("about to send smart object with server: "+info.serverString());
+
+	gateKeeper.emit("message", JSON.stringify(ServerExchange.new("ServerInfo", info)));
+}
 
 gateKeeper.connect();
 
@@ -78,17 +80,16 @@ var clientList = [];
 
 var clientSocket = ws.createServer({port:ServerSettings.defaultPort}, function (connection) {
 	// a new client has joined
-	console.log("new client joined game!");
 	clientList.push(connection);
 	players.push(connection);
+
+	gateKeeper.sendUpdatedInfo();
 
 	//we should ask him for a password if this server uses passwords
 	//and if he doesn't respond with the right password in time, kick him
 
 	connection.onmessage = function(event) {
 		var exc = ServerExchange.import(event.data);
-
-		console.log("client sent me "+event.data+", for now just send it back!");
 
 		connection.send(event.data);
 	};

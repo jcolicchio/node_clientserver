@@ -27,7 +27,6 @@ var clientList = [];
 var clientSocket = ws.createServer({port:GateKeeperInfo.clientPort}, function (connection) {
 	// a new client has joined
 	clientList.push(connection);
-	console.log("new client joined!");
 
 	//send the new client the list of game servers
 	var list = serverSocket.generateServerList();
@@ -100,8 +99,8 @@ serverSocket.on('connection', function (socket) {
 
 	socket.on('disconnect', function() {
 		// a server went down
-		serverList.splice(serverList.indexOf(socket), 1);
 		delete serverItems[serverList.indexOf(socket)];
+		serverList.splice(serverList.indexOf(socket), 1);
 	});
 });
 
@@ -130,7 +129,6 @@ serverSocket.serverInfoRequest = function() {
 serverSocket.generateServerList = function() {
 	var list = [];
 	for(key in serverItems) {
-		console.log(serverItems[key].serverString());
 		list.push(serverItems[key]);
 	}
 	return list;

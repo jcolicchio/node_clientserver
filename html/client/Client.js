@@ -51,7 +51,7 @@ $(document).ready(function(){
 		//if the key is ServerList, expect a list of ServerInfo objects
 
 		// for each item, put it in the serverlist
-		$('#serverlist').empty().append("Servers: <input id='refresh' type='submit' value='Refresh' /><br/>");
+		$('#serverlist').empty().append("Servers: <input class='refresh' type='submit' value='Refresh' /><br/>");
 		for(key in exc.payload) {
 			var s = exc.payload[key];
 			var button = $("<input type='submit' value='Join' class='join' />");
@@ -62,7 +62,7 @@ $(document).ready(function(){
 		}
 	}
 
-	$('body').on('click', '#refresh', function(e){
+	$('body').on('click', '.refresh', function(e){
 		//ask the gatekeeper connection to refresh
 		gateKeeper.send(JSON.stringify(ServerExchange.new("ServerList", null)));
 	});
@@ -72,7 +72,7 @@ $(document).ready(function(){
 		var server = $(this).data("ip")+":"+$(this).data("port");
 		//make connection connect to it!
 
-		server = new WebSocket("ws://"+window.location.hostname+":"+GateKeeperInfo.clientPort);
+		server = new WebSocket("ws://"+server);
 		server.onopen = function () {
 			console.log("Connection to server opened");
 
