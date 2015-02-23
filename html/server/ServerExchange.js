@@ -19,7 +19,7 @@
 		if(exc.payload !== null && ServerExchange.types[exc.key]) {
 			exc.payload = ServerExchange.types[exc.key](exc.payload);
 		}
-		return ServerExchange.new(exc.key, payload);
+		return ServerExchange.new(exc.key, exc.payload);
 	}
 
 	// When you call import, you call it on JSON text
@@ -35,7 +35,7 @@
 	// ServerExchange.register("Player", function(payload) { return Player.new(payload.id, payload.name); } );
 	ServerExchange.types = {};
 	ServerExchange.register = function(key, fn) {
-		this.types[key] = fn;
+		ServerExchange.types[key] = fn;
 	}
 
 	exports.new = ServerExchange.new;

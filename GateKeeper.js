@@ -60,15 +60,19 @@ clientSocket.broadcast = function(str) {
 
 // set up the socket that listens for servers
 
+// this is a list of all servers connected
 var serverList = [];
 
+// this is a list of all the info we've received from each server
+// we don't send a client info about a server until we've received it and cached it
+// TODO: have clients update the server any time a player joins or leaves, or something important happens
+// this way, the server always knows whassup without polling
 var serverItems = {};
 
 serverSocket = io.listen(HTTPServer);
 
 serverSocket.on('connection', function (socket) {
 	
-	console.log("new server wants to join!");
 	// a new server has joined
 	serverList.push(socket);
 
@@ -101,6 +105,7 @@ serverSocket.on('connection', function (socket) {
 	});
 });
 
+// send a message to every server
 serverSocket.broadcast = function(str) {
 	for(key in serverList) {
 		serverList[key].emit("message", str);
@@ -108,18 +113,24 @@ serverSocket.broadcast = function(str) {
 }
 
 // broadcast a request for all connected servers to send server info
+// this method clears the cache
+// as each incoming info comes in, we should maybe send it to any clients that have requested an update recently
+// we should keep a list of clients who have refreshed, and for like 30 seconds any new servers get sent to them?
 serverSocket.refresh = function() {
 	serverItems = {};
 	this.broadcast(this.serverInfoRequest());
 }
 
+//this convenience method just returns an empty serverinfo request to be sent to a server
 serverSocket.serverInfoRequest = function() {
 	return JSON.stringify(ServerExchange.new("ServerInfo", null));
 }
 
+// this method doesn't clear any caches, it just takes serverItems and turns its values into an array
 serverSocket.generateServerList = function() {
 	var list = [];
 	for(key in serverItems) {
+		console.log(serverItems[key].serverString());
 		list.push(serverItems[key]);
 	}
 	return list;

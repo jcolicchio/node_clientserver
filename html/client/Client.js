@@ -20,9 +20,8 @@ if(ServerExchange === undefined) {
 	ServerExchange = require('../server/ServerExchange.js');
 }
 
-var gateKeeperConnection;
-
-var connected = false;
+var gateKeeper;
+var server;
 
 $(document).ready(function(){
 
@@ -30,31 +29,68 @@ $(document).ready(function(){
 	// This stuff is probably pretty generalizable, I don't think it necessarily belongs with the custom client stuff
 	// Could we split stuff up into GateKeeperClient.js and Client.js?
 
-	gateKeeperConnection = new WebSocket("ws://"+window.location.hostname+":"+GateKeeperInfo.clientPort);
-	gateKeeperConnection.onopen = function () {
+	gateKeeper = new WebSocket("ws://"+window.location.hostname+":"+GateKeeperInfo.clientPort);
+	gateKeeper.onopen = function () {
 		console.log("Connection opened");
 		
-		connected = true;
+		gateKeeper.connected = true;
 	}
-	gateKeeperConnection.onclose = function () {
+	gateKeeper.onclose = function () {
 		console.log("Connection closed");
-		connected = false;
+		gateKeeper.connected = false;
 	}
-	gateKeeperConnection.onerror = function () {
+	gateKeeper.onerror = function () {
 		console.error("Connection error");
 	}
-	gateKeeperConnection.onmessage = function (event) {
+	gateKeeper.onmessage = function (event) {
 
 		var exc = ServerExchange.import(event.data);
 		// theoretically, it should just work for us
 		// by virtue of importing GateKeeperInfo, the registration should be done
 
 		//if the key is ServerList, expect a list of ServerInfo objects
-		console.log("just got the list!");
-		console.log(exc.payload);
 
+		// for each item, put it in the serverlist
+		$('#serverlist').empty().append("Servers: <input id='refresh' type='submit' value='Refresh' /><br/>");
+		for(key in exc.payload) {
+			var s = exc.payload[key];
+			var button = $("<input type='submit' value='Join' class='join' />");
+			button.data("ip", s.ip);
+			button.data("port", s.port);
+
+			$('#serverlist').append(s.name+": "+s.ip+":"+s.port+", "+s.players+"/"+s.capacity+" ").append(button).append("<br/>");
+		}
 	}
 
+	$('body').on('click', '#refresh', function(e){
+		//ask the gatekeeper connection to refresh
+		gateKeeper.send(JSON.stringify(ServerExchange.new("ServerList", null)));
+	});
+
+	$('body').on('click', '.join', function(e){
+		// e is what we clicked on i guess?
+		var server = $(this).data("ip")+":"+$(this).data("port");
+		//make connection connect to it!
+
+		server = new WebSocket("ws://"+window.location.hostname+":"+GateKeeperInfo.clientPort);
+		server.onopen = function () {
+			console.log("Connection to server opened");
+
+			server.send(JSON.stringify(ServerExchange.new("hi", null)));
+			
+			server.connected = true;
+		}
+		server.onclose = function () {
+			console.log("Connection closed");
+			server.connected = false;
+		}
+		server.onerror = function () {
+			console.error("Connection error");
+		}
+		server.onmessage = function (event) {
+
+		}
+	});
 
 
 });

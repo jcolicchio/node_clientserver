@@ -12,8 +12,6 @@ exports.init = function(webPort) {
 		var uri = "html/"+url.parse(request.url).pathname
 		, filename = path.join(process.cwd(), uri);
 
-		console.log(uri+", "+filename);
-
 		fs.exists(filename, function(exists) {
 			if(!exists) {
 				response.writeHead(404, {"Content-Type": "text/plain"});

@@ -32,12 +32,14 @@ var ServerSettings = require('./ServerSettings.js');
 var players = [];
 
 //connect to the gatekeeper
-gateKeeperConnection = io.connect('http://'+GateKeeperInfo.hostname+':'+GateKeeperInfo.webPort);
-gateKeeperConnection.on('connect', function () {
+gateKeeper = io.connect('http://'+GateKeeperInfo.hostname+':'+GateKeeperInfo.webPort);
+gateKeeper.on('connect', function () {
 	console.log("Connection opened");
+	// as a server, when we connect to gatekeeper, we should inform him of our info
+	// he'll ask anyway though, so let's leave this for now
 });
 
-gateKeeperConnection.on('disconnect', function () {
+gateKeeper.on('disconnect', function () {
 	console.log("Connection closed");
 	// connection to the server went down
 	// TODO: alert current players, and try to re-connect?
@@ -46,7 +48,7 @@ gateKeeperConnection.on('disconnect', function () {
 
 //TODO: use a command line arg for port, fall back to settings
 
-gateKeeperConnection.on('message', function (event) {
+gateKeeper.on('message', function (event) {
 
 	var exc = ServerExchange.import(event);
 
@@ -60,13 +62,15 @@ gateKeeperConnection.on('message', function (event) {
 			ServerSettings.capacity, 
 			ServerSettings.hasPassword);
 
-		gateKeeperConnection.emit("message", JSON.stringify(ServerExchange.new("ServerInfo", info)));
+		console.log("about to send smart object with server: "+info.serverString());
+
+		gateKeeper.emit("message", JSON.stringify(ServerExchange.new("ServerInfo", info)));
 	} else {
 		console.log("unknown message type: "+exc.key+" sent to server from gatekeeper, with payload: "+JSON.stringify(exc.payload));
 	}
 });
 
-gateKeeperConnection.connect();
+gateKeeper.connect();
 
 
 
@@ -74,7 +78,9 @@ var clientList = [];
 
 var clientSocket = ws.createServer({port:ServerSettings.defaultPort}, function (connection) {
 	// a new client has joined
+	console.log("new client joined game!");
 	clientList.push(connection);
+	players.push(connection);
 
 	//we should ask him for a password if this server uses passwords
 	//and if he doesn't respond with the right password in time, kick him
@@ -90,6 +96,7 @@ var clientSocket = ws.createServer({port:ServerSettings.defaultPort}, function (
 	connection.onclose = function() {
 		//the client left the game server
 		clientList.splice(clientList.indexOf(connection), 1);
+		players.splice(players.indexOf(connection), 1);
 	};
 });
 

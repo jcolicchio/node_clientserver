@@ -5,7 +5,7 @@
 	exports.clientPort = 12345;
 
 	//set this to wherever you want the server to expect to connect to the gatekeeper
-	exports.hostname = "joecolicch.io";
+	exports.hostname = "localhost";
 })(typeof exports === 'undefined'? this['GateKeeperInfo']={}: exports);
 
 // Keep in mind, this is where we'd originally planned to have:
@@ -24,8 +24,6 @@ ServerExchange.register("ServerList", function(payload) {
 	//we're assuming payload is a list of ServerInfo objects
 	var serverList = [];
 	for(key in payload) {
-		console.log("deserializing: ");
-		console.log(payload[key]);
 		serverList[key] = ServerInfo.copy(payload[key]);
 	}
 	return serverList;

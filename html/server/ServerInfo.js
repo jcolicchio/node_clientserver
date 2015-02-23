@@ -33,7 +33,10 @@
 			port: port,
 			players: players,
 			capacity: capacity,
-			hasPassword: hasPassword
+			hasPassword: hasPassword,
+			serverString: function() {
+				return this.ip + ":" + this.port;
+			}
 		}
 
 		return serverInfo;
@@ -42,7 +45,7 @@
 		if(si === null) {
 			return null;
 		}
-		return ServerInfo.new(si.name, si.port, si.players, si.capacity, si.hasPassword);
+		return ServerInfo.new(si.name, si.ip, si.port, si.players, si.capacity, si.hasPassword);
 	}
 	ServerInfo.import = function(json) {
 		return ServerInfo.copy(JSON.parse(json));
