@@ -5,6 +5,8 @@
 	"main": "server.js",
 	"repository": { "type": "git", "url": "http://github.com/jcolicchio/node_clientserver/" },
 	"dependencies": {
-		"ws": "latest"
+		"ws": "latest",
+		"socket.io": "latest",
+		"socket.io-client": "latest"
 	}
 }

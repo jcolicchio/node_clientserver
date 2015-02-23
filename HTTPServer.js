@@ -3,10 +3,12 @@ var fs = require('fs');
 var url = require('url');
 var path = require('path');
 
-var Settings = require('./Settings.js');
+var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
 
+// TODO: make it look in html, and default to html/client/index.html
+// in general, we want it to use html/client as the base path, but allow access to html/server
 exports.init = function(webPort) {
-	http.createServer(function (request, response) {
+	var server = http.createServer(function (request, response) {
 		var uri = url.parse(request.url).pathname
 		, filename = path.join(process.cwd(), uri);
 
@@ -35,7 +37,11 @@ exports.init = function(webPort) {
 				response.end();
 			});
 		});
-	}).listen(webPort);
+	});
 
-	console.log("Server running at http://127.0.0.1:"+Settings.webPort+"/");
+	server.listen(webPort);
+
+	console.log("Server running at http://127.0.0.1:"+GateKeeperInfo.webPort+"/");
+
+	return server;
 }

@@ -1,169 +1,74 @@
+// This is the game server itself
+// This will be customized for a given project
+// But the way the server works, some of it will be standardized
+// Find the template code here, along with examples of how to set up the server
+// And to have it communicate with the players
+
+// Keeping scalability in mind, theoretically any user should be able to spin one of these up
+// However, if we want GateKeeper to only talk to legit servers that we control, we could
+// Put some kind of whitelist of server IPs, such that GateKeeper won't list an unauthorized server unless its IP matches
+// And furthermore, we could have some kind of config in some private GateKeeper setting
+
+
+// For starters, we need to write the code that happens when this server boots up
+// Check optional params for a port to run on, or default to 12345
+
+// This is a game server, and so we'll need to import GateKeeperSettings.js
+// And GateKeeperInfo.js
+// It's suggested, but not necessary, that we add a ServerSettings,js file too
+
+// we need ws for talking to clients
 var ws = require('ws');
 
-var Player = require('./Player.js');
-var GoBoard = require('./GoBoard.js');
-var Command = require('./Command.js');
-var NetworkedGoBoard = require('./NetworkedGoBoard.js');
-var ServerExchange = require('./ServerExchange.js');
-var Settings = require('./Settings.js');
-var GenericServer = require('./GenericServer.js');
+// we need io for server-to-server communication
+var io = require('socket.io-client')
 
-GenericServer.init(Settings.webPort);
+var ServerExchange = require('./html/server/ServerExchange.js');
+var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
+var ServerInfo = require('./html/server/ServerInfo.js');
+var ServerSettings = require('./ServerSettings.js');
 
 
-var board = NetworkedGoBoard.new(null, null, GoBoard.new(11), []);
-
-var names = ["dingus", "testplayer"];
-
-var server = ws.createServer({port:Settings.socketPort}, function (connection) {
-	this.addConnectionWithName(connection, board.players.length < names.length ? names[board.players.length] : "specN");
-	
-	connection.onmessage = function(event) {
-		var str = event.data;
-		console.log("player "+connection.player.id+" said "+str);
-		
-		console.log("new, now we're processing it!");
-		var exc = ServerExchange.import(str);
-		if(exc.type == ServerExchange.TYPE.GOBOARD) {
-			if(exc.key == ServerExchange.KEY.GOBOARD.STATE) {
-			console.log("player "+connection.player.name+" wants board state");
-			var response = server.exchangeForBoard(board);
-			connection.send(JSON.stringify(response));
-			} else if(exc.key == ServerExchange.KEY.GOBOARD.SWITCH || exc.key == ServerExchange.KEY.GOBOARD.RESET) {
-				//if this player is an active player, reset and switch
-				if(connection.player.equal(board.whitePlayer) || connection.player.equal(board.blackPlayer)) {
-					if(exc.key == ServerExchange.KEY.GOBOARD.SWITCH) {
-						var player = board.whitePlayer;
-						board.whitePlayer = board.blackPlayer;
-						board.blackPlayer = player;
-					}
-					board.board.init();
-					server.broadcast(JSON.stringify(server.exchangeForBoard(board)));
-				}
-			} else if(exc.key == ServerExchange.KEY.GOBOARD.LEAVE) {
-				//remove from server, re-add to server
-				server.removePlayer(connection.player);
-				server.addPlayer(connection.player);
-			}
-		} else if(exc.type == ServerExchange.TYPE.PLAYER) {
-			if(exc.key == ServerExchange.KEY.PLAYER.SELF) {
-				if(exc.payload !== null && exc.payload !== undefined) {
-					console.log("player "+connection.player.name+" wants to be called "+exc.payload.name);
-					for(key in board.players) {
-						if(board.players[key].equal(connection.player)) {
-							board.players[key].name = exc.payload.name;
-							break;
-						}
-					}
-					connection.player.name = exc.payload.name;
-					server.broadcast(JSON.stringify(server.exchangeForBoard(board)));
-				}
-				console.log("player "+connection.player.name+" wants self player object");
-				connection.send(JSON.stringify(ServerExchange.new(ServerExchange.TYPE.PLAYER, ServerExchange.KEY.PLAYER.SELF, connection.player)));
-			} else if(exc.key == ServerExchange.KEY.PLAYER.OPPONENT) {
-				console.log("player "+connection.player.name+" wants opponent player object");
-			} else if(exc.key == ServerExchange.KEY.PLAYER.LIST) {
-				console.log("player "+connection.player.name+" wants list");
-				//connection.send(JSON.stringify(ServerExchange.new(ServerExchange.TYPE.PLAYER, ServerExchange.KEY.PLAYER.LIST, board.players)));
-			}
-		} else if(exc.type == ServerExchange.TYPE.COMMAND) {
-			var response = ServerExchange.new(ServerExchange.TYPE.COMMAND, ServerExchange.KEY.COMMAND.RESPONSE, false);
-			console.log("player "+connection.player.name+" sent command: "+exc.payload.x+", "+exc.payload.y);
-			if(board.players.length >= 2) {
-				var command = exc.payload;
-				command.player = connection.player;
-				var outcome = board.applyCommand(command);
-				response.payload = outcome;
-			}
-			connection.send(JSON.stringify(response));
-			exc = server.exchangeForBoard(board);
-			server.broadcast(JSON.stringify(exc));
-		}
-		
-	};
-	connection.onclose = function() {
-		server.removeConnection(connection);
-		
-		var exc = server.exchangeForBoard(board);
-		server.broadcast(JSON.stringify(exc));
-	};
+var players = [];
+console.log("server going up! connecting to gate keeper at localhost:"+GateKeeperInfo.webPort);
+//for now, we're just connecting to localhost, joecolicch.io
+gateKeeperConnection = io.connect('http://localhost:'+GateKeeperInfo.webPort);
+gateKeeperConnection.on('connect', function () {
+	console.log("Connection opened");
 });
 
+gateKeeperConnection.on('disconnect', function () {
+	console.log("Connection closed");
+	// connection to the server went down
+	// TODO: alert current players, and try to re-connect?
+});
 
-//server.players = [];
-server.connections = [];
-server.nextPlayerId = 0;
-server.addConnectionWithName = function(connection, name) {
-	var player = Player.new(this.nextPlayerId++, name);
-	connection.player = player;
-	this.connections.push(connection);
-	
-	this.addPlayer(player);
-};
-server.addPlayer = function(player) {
-	board.players.push(player);
-	if(board.players.length == 1) {
-		board.blackPlayer = player;
-	} else if(board.players.length == 2) {
-		if(board.whitePlayer === undefined || board.whitePlayer === null) {
-			board.whitePlayer = player;
-		} else {
-			board.blackPlayer = player;
-		}
+//gateKeeperConnection.onerror = function () {
+//	console.error("Connection error");
+//}
+
+gateKeeperConnection.on('message', function (event) {
+
+	console.log("gatekeeper speaks!: "+event);
+	var exc = ServerExchange.import(event);
+
+	if(exc.key == "ServerInfo") {
+		//we need to send our info
+		var info = ServerInfo.new(
+			ServerSettings.name, 
+			null, 
+			ServerSettings.port, 
+			players.length, 
+			ServerSettings.capacity, 
+			ServerSettings.hasPassword);
+
+		console.log("sending!");
+		gateKeeperConnection.emit("message", JSON.stringify(ServerExchange.new("ServerInfo", info)));
+		console.log("sent!");
 	}
-	this.broadcast(JSON.stringify(this.exchangeForBoard(board)));
-	return player;
-};
-server.removeConnection = function(connection) {
-	for(key in this.connections) {
-		if(this.connections[key] == connection) {
-			this.connections.splice(key,1);
-			break;
-		}
-	}
-	server.removePlayer(connection.player);
-};
-server.removePlayer = function(player) {
-	for(key in board.players) {
-		if(player.equal(board.players[key])) {
-			board.players.splice(key,1);
-			break;
-		}
-	}
-	if(player.equal(board.whitePlayer)) {
-		board.whitePlayer = null;
-		board.board.init();
-		for(key in board.players) {
-			if(!board.players[key].equal(board.blackPlayer)) {
-				board.whitePlayer = board.players[key];
-				break;
-			}
-		}
-	} else if(player.equal(board.blackPlayer)) {
-		board.blackPlayer = null;
-		board.board.init();
-		for(key in board.players) {
-			if(!board.players[key].equal(board.whitePlayer)) {
-				board.blackPlayer = board.players[key];
-				break;
-			}
-		}
-	}
-}
-server.connectionForPlayer = function(player) {
-	for(connection in this.connections) {
-		if(this.connections[connection].player.equal(player)) {
-			return this.connections[connection];
-		}
-	}
-	return null;
-}
-server.broadcast = function(str) {
-	board.players.forEach(function (player) {
-		var connection = server.connectionForPlayer(player);
-		connection.send(str);
-	});
-}
-server.exchangeForBoard = function(board) {
-	return ServerExchange.new(ServerExchange.TYPE.GOBOARD, ServerExchange.KEY.GOBOARD.STATE, board);
-}
+});
+
+gateKeeperConnection.connect();
+
+//let's also kick off the player's websocket thinger!
+// TODO! let people actually connect!
