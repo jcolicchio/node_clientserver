@@ -3,6 +3,8 @@
 (function(exports){
 	exports.webPort = 8080; // TODO: change this to 80 so it runs with sudo as default http 
 	exports.clientPort = 12345;
+	
+	// get rid of server port, we use 8080 or whatever web port to allow 
 	exports.serverPort = 12346;
 
 	//set this to wherever you want the server to expect to connect to the gatekeeper

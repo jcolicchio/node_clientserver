@@ -18,7 +18,7 @@
 // Maybe that's part of the ServerInfo.js, which gets passed 
 
 exports.name = "Awesome Server";
-exports.port = 12350;
+exports.defaultPort = 12350;
 exports.capacity = 8;
 exports.hasPassword = false;
 

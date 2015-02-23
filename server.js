@@ -11,7 +11,7 @@
 
 
 // For starters, we need to write the code that happens when this server boots up
-// Check optional params for a port to run on, or default to 12345
+// Check optional params for a port to run on, or default to whatever's in settings
 
 // This is a game server, and so we'll need to import GateKeeperSettings.js
 // And GateKeeperInfo.js
@@ -47,6 +47,8 @@ gateKeeperConnection.on('disconnect', function () {
 //	console.error("Connection error");
 //}
 
+//TODO: use a command line arg for port, fall back to settings
+
 gateKeeperConnection.on('message', function (event) {
 
 	console.log("gatekeeper speaks!: "+event);
@@ -57,7 +59,7 @@ gateKeeperConnection.on('message', function (event) {
 		var info = ServerInfo.new(
 			ServerSettings.name, 
 			null, 
-			ServerSettings.port, 
+			ServerSettings.defaultPort, 
 			players.length, 
 			ServerSettings.capacity, 
 			ServerSettings.hasPassword);
@@ -70,5 +72,36 @@ gateKeeperConnection.on('message', function (event) {
 
 gateKeeperConnection.connect();
 
+
 //let's also kick off the player's websocket thinger!
 // TODO! let people actually connect!
+var clientList = [];
+
+var clientSocket = ws.createServer({port:ServerSettings.defaultPort}, function (connection) {
+	// a new client has joined
+	clientList.push(connection);
+	console.log("new client joined!");
+
+	//send the new client the list of game servers
+	var list = serverSocket.generateServerList();
+	connection.send(JSON.stringify(ServerExchange.new("ServerList", list)));
+	
+	connection.onmessage = function(event) {
+		var exc = ServerExchange.import(event.data);
+
+		console.log("client sent me "+event.data+", for now just send it back!");
+
+		connection.send(event.data);
+	};
+
+	connection.onclose = function() {
+		// client left the server itself
+		clientList.splice(clientList.indexOf(connection), 1);
+	};
+});
+
+clientSocket.broadcast = function(str) {
+	for(key in clientList) {
+		clientList[key].send(str);
+	}
+}

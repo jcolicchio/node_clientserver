@@ -30,7 +30,7 @@ $(document).ready(function(){
 	// This stuff is probably pretty generalizable, I don't think it necessarily belongs with the custom client stuff
 	// Could we split stuff up into GateKeeperClient.js and Client.js?
 
-	gateKeeperConnection = new WebSocket("ws://"+window.location.hostname+":"+GateKeeperInfo.clientPort)
+	gateKeeperConnection = new WebSocket("ws://"+window.location.hostname+":"+GateKeeperInfo.clientPort);
 	gateKeeperConnection.onopen = function () {
 		console.log("Connection opened");
 		
@@ -54,5 +54,7 @@ $(document).ready(function(){
 		console.log(exc.payload);
 
 	}
+
+
 
 });
