@@ -80,6 +80,7 @@ serverSocket.on('connection', function (socket) {
 		
 		if(exc.key == "ServerInfo") {
 			//exc.payload.ip = connection.
+			exc.payload.ip = socket.conn.remoteAddress;
 			console.log(exc.payload);
 			serverItems[socket] = exc.payload;
 

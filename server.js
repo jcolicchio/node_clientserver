@@ -30,9 +30,9 @@ var ServerSettings = require('./ServerSettings.js');
 
 
 var players = [];
-console.log("server going up! connecting to gate keeper at localhost:"+GateKeeperInfo.webPort);
+console.log("server going up! connecting to gate keeper at http://"+GateKeeperInfo.hostname+":"+GateKeeperInfo.webPort);
 //for now, we're just connecting to localhost, joecolicch.io
-gateKeeperConnection = io.connect('http://localhost:'+GateKeeperInfo.webPort);
+gateKeeperConnection = io.connect('http://'+GateKeeperInfo.hostname+':'+GateKeeperInfo.webPort);
 gateKeeperConnection.on('connect', function () {
 	console.log("Connection opened");
 });

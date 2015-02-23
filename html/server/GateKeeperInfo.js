@@ -4,6 +4,9 @@
 	exports.webPort = 8080; // TODO: change this to 80 so it runs with sudo as default http 
 	exports.clientPort = 12345;
 	exports.serverPort = 12346;
+
+	//set this to wherever you want the server to expect to connect to the gatekeeper
+	exports.hostname = "joecolicch.io";
 })(typeof exports === 'undefined'? this['GateKeeperInfo']={}: exports);
 
 // Keep in mind, this is where we'd originally planned to have:
