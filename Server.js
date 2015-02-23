@@ -19,7 +19,6 @@
 
 // we need ws for talking to clients
 var ws = require('ws');
-
 // we need io for server-to-server communication
 var io = require('socket.io-client')
 
@@ -28,11 +27,42 @@ var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
 var ServerInfo = require('./html/server/ServerInfo.js');
 var ServerSettings = require('./ServerSettings.js');
 
+//TODO: fix up command line args
 
-var players = [];
+// -n name
+// -s secret
+// -p port
+// -g gatekeeper with optional :8080 or so
+
+
+// **** COMMAND LINE PROCESSING ****
+
+var host = GateKeeperInfo.hostname+":"+GateKeeperInfo.webPort;
+var port = ServerSettings.defaultPort;
+
+if(process.argv.length > 2) {
+	// if it has a ., it's an IP
+	var firstArg = process.argv[2];
+	if(firstArg.indexOf(".") >= 0) {
+		host = firstArg;
+		if(host.indexOf(":") < 0) {
+			host += ":"+GateKeeperInfo.webPort;
+		}
+	} else {
+		// could either be port or password, assume port for now
+		port = firstArg;
+	}
+}
+if(process.argv.length > 3) {
+	var secondArg = process.argv[3];
+	port = secondArg;
+}
+
+
+// **** GATEKEEPER INTERACTION ****
 
 //connect to the gatekeeper
-gateKeeper = io.connect('http://'+GateKeeperInfo.hostname+':'+GateKeeperInfo.webPort);
+gateKeeper = io.connect('http://'+host);
 gateKeeper.on('connect', function () {
 	// as a server, when we connect to gatekeeper, we should inform him of our info
 	// he'll ask anyway though, so let's leave this for now
@@ -44,7 +74,6 @@ gateKeeper.on('disconnect', function () {
 
 });
 
-//TODO: use a command line arg for port, fall back to settings
 
 gateKeeper.on('message', function (event) {
 
@@ -62,7 +91,7 @@ gateKeeper.sendUpdatedInfo = function() {
 	var info = ServerInfo.new(
 		ServerSettings.name, 
 		null, // the IP will be filled in on the other side where it's easily accessible
-		ServerSettings.defaultPort, 
+		port, 
 		players.length, 
 		ServerSettings.capacity, 
 		ServerSettings.hasPassword);
@@ -75,10 +104,13 @@ gateKeeper.sendUpdatedInfo = function() {
 gateKeeper.connect();
 
 
+// **** CLIENT INTERACTION ****
+// This code handles the connection with clients who are playing a game/joining the server
 
 var clientList = [];
+var players = [];
 
-var clientSocket = ws.createServer({port:ServerSettings.defaultPort}, function (connection) {
+var clientSocket = ws.createServer({port:port}, function (connection) {
 	// a new client has joined
 	clientList.push(connection);
 
@@ -102,6 +134,7 @@ var clientSocket = ws.createServer({port:ServerSettings.defaultPort}, function (
 	connection.onmessage = function(event) {
 		var exc = ServerExchange.import(event.data);
 
+		// for now just parrot it back
 		connection.send(event.data);
 	};
 

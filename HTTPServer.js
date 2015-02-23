@@ -9,6 +9,9 @@ var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
 // in general, we want it to use html/client as the base path, but allow access to html/server
 exports.init = function(webPort) {
 	var server = http.createServer(function (request, response) {
+
+		// TODO: investigate if this is secure, make sure nobody can access files outside of this folder
+		// the html/ should keep all requests within this folder, but maybe html/.. will break it out?
 		var uri = "html/"+url.parse(request.url).pathname
 		, filename = path.join(process.cwd(), uri);
 
@@ -20,12 +23,8 @@ exports.init = function(webPort) {
 				return;
 			}
 
-			// TODO: 
-			// This modification makes it load /client/index.html whenever you don't try to load a file
-			// Change it such that it only appends /client when the target is /
-			// And it appends /index.html when the target is a directory
 			if (fs.statSync(filename).isDirectory()) {
-				filename += '/client/index.html';
+				filename += '/index.html';
 			}
 
 			fs.readFile(filename, "binary", function(err, file) {

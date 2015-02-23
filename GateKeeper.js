@@ -1,3 +1,8 @@
+// TODO: oauth and account registration stuff
+// TODO: some kind of protocol design for verifying client A connecting to server B is a legit client A
+// presumably GateKeeper will assign client A an auth token
+// client A needs to send it to server B, so that server B can double-check client A's identity
+
 // we need ws for client-to-server communication
 var ws = require('ws');
 // we need io for server-to-server communication
@@ -9,13 +14,17 @@ var ServerInfo = require('./html/server/ServerInfo.js');
 // the settings are private, the info is public
 var GateKeeperSettings = require('./GateKeeperSettings.js');
 
+// the info is public, contains stuff like which ports to use, etc
 var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
+
+
 
 var HTTPServer = require('./HTTPServer.js').init(GateKeeperInfo.webPort);
 
-// TODO: probably. maybe we need to drop unresponsive servers?
+// **** CLIENT COMMUNICATION ****
 
 // TODO: move these into properties of the clientSocket and serverSocket items
+// clientSocket.clients or clientSocket.connections or .list or something
 var clientList = [];
 
 //server items should be used like this
@@ -37,7 +46,7 @@ var clientSocket = ws.createServer({port:GateKeeperInfo.clientPort}, function (c
 
 		if(exc.key == "ServerList") {
 			// the player is asking for a server list!
-			// serialize serverItems, maybe refresh it once? maybe refresh every 30 seconds or so?
+			// serialize serverItem list, maybe refresh it once? maybe refresh every 30 seconds or so?
 			var list = serverSocket.generateServerList();
 			connection.send(JSON.stringify(ServerExchange.new("ServerList", list)));
 		} else {
@@ -57,22 +66,33 @@ clientSocket.broadcast = function(str) {
 	}
 }
 
+
+// **** SERVER COMMUNICATION ****
 // set up the socket that listens for servers
+
+// TODO: probably. maybe we need to drop unresponsive servers?
+// when we heartbeat, if some servers don't respond, do we drop em?
 
 // this is a list of all servers connected
 var serverList = [];
-
-// this is a list of all the info we've received from each server
-// we don't send a client info about a server until we've received it and cached it
-// TODO: have clients update the server any time a player joins or leaves, or something important happens
-// this way, the server always knows whassup without polling
-var serverItems = {};
 
 serverSocket = io.listen(HTTPServer);
 
 serverSocket.on('connection', function (socket) {
 	
 	// a new server has joined
+
+	// TODO: check whitelist or blacklist if either is real
+	// make sure if whitelist isn't null, it's on the list
+	// make sure if blacklist isn't null, it's NOT on the list
+	// if the server is blacklisted or we're whitelisting
+
+	// If we've taken some other kind of security measure to ensure only valid servers are connecting
+	// Then we need to do that here too
+	// Presumably we'll put some kind of key in GateKeeperSettings.js and not push it to github in our
+	// "official" implementation
+	// Or, we'll just whitelist local servers
+
 	serverList.push(socket);
 
 	//outright ask for their info!
@@ -90,7 +110,7 @@ serverSocket.on('connection', function (socket) {
 			// We can't use socket as key, it's too complex
 			//instead, we can search for the entry in serverList, and use the index as a key
 
-			serverItems[serverList.indexOf(socket)] = exc.payload;
+			socket.serverItem = exc.payload;
 
 		} else {
 			console.log("unknown message type: "+exc.key+" sent to gatekeeper from server, with payload: "+JSON.stringify(exc.payload));
@@ -99,7 +119,6 @@ serverSocket.on('connection', function (socket) {
 
 	socket.on('disconnect', function() {
 		// a server went down
-		delete serverItems[serverList.indexOf(socket)];
 		serverList.splice(serverList.indexOf(socket), 1);
 	});
 });
@@ -116,7 +135,7 @@ serverSocket.broadcast = function(str) {
 // as each incoming info comes in, we should maybe send it to any clients that have requested an update recently
 // we should keep a list of clients who have refreshed, and for like 30 seconds any new servers get sent to them?
 serverSocket.refresh = function() {
-	serverItems = {};
+	// somehow clear the thinger?
 	this.broadcast(this.serverInfoRequest());
 }
 
@@ -128,8 +147,8 @@ serverSocket.serverInfoRequest = function() {
 // this method doesn't clear any caches, it just takes serverItems and turns its values into an array
 serverSocket.generateServerList = function() {
 	var list = [];
-	for(key in serverItems) {
-		list.push(serverItems[key]);
+	for(key in serverList) {
+		list.push(serverList[key].serverItem);
 	}
 	return list;
 }

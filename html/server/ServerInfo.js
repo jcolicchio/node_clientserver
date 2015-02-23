@@ -14,16 +14,11 @@
 // This is much easier than having the server figure out its own IP
 
 (function(exports){
-	//	Theoretically, since smart objects are useless without ServerExchange
-	//	We could probably make each smart object require ServerExchange
-	//	Then have it register itself!
-	//	Is that true? Can we grab THE ServerExchange? I think it'll just create a new one
-	//	I have a feeling it'll work client side, but not server side
 
-	//	var ServerExchange = this['ServerExchange'];
-	//	if(ServerExchange === undefined) {
-	//		ServerExchange = require('./ServerExchange.js');	
-	//	}
+	var ServerExchange = this['ServerExchange'];
+	if(ServerExchange === undefined) {
+		ServerExchange = require('./ServerExchange.js');	
+	}
 
 	ServerInfo = {};
 	ServerInfo.new = function(name, ip, port, players, capacity, hasPassword) {
@@ -54,5 +49,20 @@
 	exports.new = ServerInfo.new;
 	exports.copy = ServerInfo.copy;
 	exports.import = ServerInfo.import;
+
+	// TODO: make sure to mention that every smart class needs to register with ServerExchange!
+	ServerExchange.register("ServerList", function(payload) {
+		//we're assuming payload is a list of ServerInfo objects
+		var serverList = [];
+		for(key in payload) {
+			serverList[key] = ServerInfo.copy(payload[key]);
+		}
+		return serverList;
+	});
+
+	ServerExchange.register("ServerInfo", function(payload) {
+		// we're assuming the payload is a ServerInfo
+		return ServerInfo.copy(payload);
+	});
 
 })(typeof exports === 'undefined'? this['ServerInfo']={}: exports);

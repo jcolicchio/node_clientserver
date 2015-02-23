@@ -1,96 +1,71 @@
-// we see a lot of these four lines. theoretically we should probably say
-// if this['whatever'] doesn't exist, set it to require
-// could that work? i have no idea what node server's context is like
-// if we set this['module'] if not already defined, will other parts see any changes we make to the singleton?
-
-// this is probably why it's not meant to be singleton-ish
-
-var GateKeeperInfo = this['GateKeeperInfo'];
-if(GateKeeperInfo === undefined) {
-	GateKeeperInfo = require('../server/GateKeeperInfo.js');
-}
-
-var ServerInfo = this['ServerInfo'];
-if(ServerInfo === undefined) {
-	ServerInfo = require('../server/ServerInfo.js');
-}
+// This is the client, should be pretty much custom code here
 
 var ServerExchange = this['ServerExchange'];
 if(ServerExchange === undefined) {
 	ServerExchange = require('../server/ServerExchange.js');
 }
+var ServerInfo = this['ServerInfo'];
+if(ServerInfo === undefined) {
+	ServerInfo = require('../server/ServerInfo.js');
+}
 
-var gateKeeper;
 var server;
 
-$(document).ready(function(){
+// custom stuff specific to our game server itself
+// note: we'll receive a ServerInfo object from GateKeeperClient.js
+var connectToServer = function(serverInfo) {
 
-	// This is a connection to the GateKeeper
-	// This stuff is probably pretty generalizable, I don't think it necessarily belongs with the custom client stuff
-	// Could we split stuff up into GateKeeperClient.js and Client.js?
+	// UI for "connecting...";
+	var serverStatus = $("<div id='serverstatus'></div>");
+	$('body').append(serverStatus);
 
-	gateKeeper = new WebSocket("ws://"+window.location.hostname+":"+GateKeeperInfo.clientPort);
-	gateKeeper.onopen = function () {
-		console.log("Connection opened");
+	setStatus("Connecting...");
+
+	server = new WebSocket("ws://"+serverInfo.serverString());
+	server.onopen = function () {
+		console.log("Connection to server opened");
+
+		disconnectFromGateKeeper();
+
+		setStatus("Connected! ");
+		// TODO: "disconnect" button
+		$('#serverstatus').append("<input type='submit' id='disconnect' value='Disconnect' />");
+
+		server.send(JSON.stringify(ServerExchange.new("hi", null)));
 		
-		gateKeeper.connected = true;
+		server.connected = true;
 	}
-	gateKeeper.onclose = function () {
+	server.onclose = function () {
 		console.log("Connection closed");
-		gateKeeper.connected = false;
+		server.connected = false;
+
+		// TODO: re-connect to gatekeeper
+		$('#serverstatus').remove();
+
+		connectToGateKeeper(connectToServer);
 	}
-	gateKeeper.onerror = function () {
+	server.onerror = function () {
 		console.error("Connection error");
 	}
-	gateKeeper.onmessage = function (event) {
-
-		var exc = ServerExchange.import(event.data);
-		// theoretically, it should just work for us
-		// by virtue of importing GateKeeperInfo, the registration should be done
-
-		//if the key is ServerList, expect a list of ServerInfo objects
-
-		// for each item, put it in the serverlist
-		$('#serverlist').empty().append("Servers: <input class='refresh' type='submit' value='Refresh' /><br/>");
-		for(key in exc.payload) {
-			var s = exc.payload[key];
-			var button = $("<input type='submit' value='Join' class='join' />");
-			button.data("ip", s.ip);
-			button.data("port", s.port);
-
-			$('#serverlist').append(s.name+": "+s.ip+":"+s.port+", "+s.players+"/"+s.capacity+" ").append(button).append("<br/>");
-		}
+	server.onmessage = function (event) {
+		console.log("game server said: "+event.data);
 	}
+}
 
-	$('body').on('click', '.refresh', function(e){
-		//ask the gatekeeper connection to refresh
-		gateKeeper.send(JSON.stringify(ServerExchange.new("ServerList", null)));
+// UI stuff?
+var setStatus = function(status) {
+	$('#serverstatus').empty().append(status);
+}
+
+//jquery stuff for setting up the page, most of this code is
+$(document).ready(function(){
+
+	$('body').on('click', '#disconnect', function(e) {
+		server.close();
 	});
 
-	$('body').on('click', '.join', function(e){
-		// e is what we clicked on i guess?
-		var server = $(this).data("ip")+":"+$(this).data("port");
-		//make connection connect to it!
-
-		server = new WebSocket("ws://"+server);
-		server.onopen = function () {
-			console.log("Connection to server opened");
-
-			server.send(JSON.stringify(ServerExchange.new("hi", null)));
-			
-			server.connected = true;
-		}
-		server.onclose = function () {
-			console.log("Connection closed");
-			server.connected = false;
-		}
-		server.onerror = function () {
-			console.error("Connection error");
-		}
-		server.onmessage = function (event) {
-
-		}
-	});
-
+	// This is a connection to the GateKeeper
+	// The argument is a callback for connecting to our own server, given one of our serverinfo objects
+	connectToGateKeeper(connectToServer);
 
 });

@@ -4,3 +4,8 @@
 // Since only html is accessible from the web, these settings should chill outside
 
 // Maybe this should just go at the top of GateKeeper? To the best of my knowledge it just gets used once
+
+
+// Presently, there's nothing here...
+exports.ipWhiteList = null;
+exports.ipBlackList = [];

@@ -33,6 +33,7 @@
 	// The arg you pass the fn is the payload
 	// For example:
 	// ServerExchange.register("Player", function(payload) { return Player.new(payload.id, payload.name); } );
+	// It should return a qualified smart object based on the payload!
 	ServerExchange.types = {};
 	ServerExchange.register = function(key, fn) {
 		ServerExchange.types[key] = fn;
