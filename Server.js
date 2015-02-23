@@ -98,6 +98,9 @@ var clientSocket = ws.createServer({port:ServerSettings.defaultPort}, function (
 		//the client left the game server
 		clientList.splice(clientList.indexOf(connection), 1);
 		players.splice(players.indexOf(connection), 1);
+
+		// remember to tell gatekeeper your stats changed
+		gateKeeper.sendUpdatedInfo();
 	};
 });
 
