@@ -81,7 +81,9 @@ serverSocket.on('connection', function (socket) {
 			exc.payload.ip = socket.conn.remoteAddress;
 			console.log(exc.payload);
 			serverItems[socket] = exc.payload;
-			console.log(serverItems.length+" servers");
+			for(key in serverItems) {
+				console.log(serverItems[key]);
+			}
 
 		}
 	});
