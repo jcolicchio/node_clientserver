@@ -82,10 +82,6 @@ var clientSocket = ws.createServer({port:ServerSettings.defaultPort}, function (
 	clientList.push(connection);
 	console.log("new client joined!");
 
-	//send the new client the list of game servers
-	var list = serverSocket.generateServerList();
-	connection.send(JSON.stringify(ServerExchange.new("ServerList", list)));
-	
 	connection.onmessage = function(event) {
 		var exc = ServerExchange.import(event.data);
 

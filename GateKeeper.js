@@ -79,11 +79,15 @@ serverSocket.on('connection', function (socket) {
 		if(exc.key == "ServerInfo") {
 			//exc.payload.ip = connection.
 			exc.payload.ip = socket.conn.remoteAddress;
-			console.log(exc.payload);
-			serverItems[socket] = exc.payload;
-			for(key in serverItems) {
-				console.log(serverItems[key]);
-			}
+			//for(key in serverList) {
+			//	if(key == socket) {
+			//		console.log("theyre equal!");
+			//	}
+			//}
+			// We can't use socket as key, it's too complex
+			var key = serverList.indexOf(socket);
+			serverItems[key] = exc.payload;
+			console.log(JSON.stringify(serverItems));
 
 		}
 	});
@@ -91,7 +95,7 @@ serverSocket.on('connection', function (socket) {
 	socket.on('disconnect', function() {
 		// a server went down
 		serverList.splice(serverList.indexOf(socket), 1);
-		delete serverItems[socket];
+		delete serverItems[serverList.indexOf(socket)];
 	});
 });
 
