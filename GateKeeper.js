@@ -4,27 +4,26 @@ var ws = require('ws');
 var io = require('socket.io');
 
 var ServerExchange = require('./html/server/ServerExchange.js');
-
-
 var ServerInfo = require('./html/server/ServerInfo.js');
 
 // the settings are private, the info is public
 var GateKeeperSettings = require('./GateKeeperSettings.js');
 
 var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
-// when i import this, will it register with MY copy of ServerExchange? I don't think it will
 
 var HTTPServer = require('./HTTPServer.js').init(GateKeeperInfo.webPort);
 
+// TODO: probably. maybe we need to drop unresponsive servers?
 
-// TODO: move these into properties of the portals
+// TODO: move these into properties of the clientSocket and serverSocket items
 var clientList = [];
 
-var serverList = [];
+//server items should be used like this
+//every time the client wants to refresh, should we blast the servers with a request?
+//another thing we could do is forward the "requesting" client with asynchronous info responses as they arrive?
+//this would look the same as when you hit refresh in tf2 and the server list populates iteratively
 
-var serverItems = {};
-//var cachedServerItemsList = [];
-
+// set up the socket that listens for clients
 var clientSocket = ws.createServer({port:GateKeeperInfo.clientPort}, function (connection) {
 	// a new client has joined
 	clientList.push(connection);
@@ -42,6 +41,8 @@ var clientSocket = ws.createServer({port:GateKeeperInfo.clientPort}, function (c
 			// serialize serverItems, maybe refresh it once? maybe refresh every 30 seconds or so?
 			var list = serverSocket.generateServerList();
 			connection.send(JSON.stringify(ServerExchange.new("ServerList", list)));
+		} else {
+			console.log("unknown message type: "+exc.key+" sent to gatekeeper from client, with payload: "+JSON.stringify(exc.payload));
 		}
 	};
 
@@ -57,6 +58,11 @@ clientSocket.broadcast = function(str) {
 	}
 }
 
+// set up the socket that listens for servers
+
+var serverList = [];
+
+var serverItems = {};
 
 serverSocket = io.listen(HTTPServer);
 
@@ -94,10 +100,6 @@ serverSocket.on('connection', function (socket) {
 		delete serverItems[serverList.indexOf(socket)];
 	});
 });
-
-//serverSocket.listen(GateKeeperInfo.serverPort);
-//console.log("server socket listening on "+GateKeeperInfo.serverPort)
-
 
 serverSocket.broadcast = function(str) {
 	for(key in serverList) {

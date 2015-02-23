@@ -3,9 +3,6 @@
 (function(exports){
 	exports.webPort = 8080; // TODO: change this to 80 so it runs with sudo as default http 
 	exports.clientPort = 12345;
-	
-	// get rid of server port, we use 8080 or whatever web port to allow 
-	exports.serverPort = 12346;
 
 	//set this to wherever you want the server to expect to connect to the gatekeeper
 	exports.hostname = "joecolicch.io";
@@ -24,7 +21,7 @@ if(ServerExchange === undefined) {
 // In practice, we'll probably kick off a broadcast when a server comes up or down
 // And allow the user to "refresh" by sending a "ServerList" exchange with a null payload
 ServerExchange.register("ServerList", function(payload) {
-	//we're assuming payload is a list of server thingers
+	//we're assuming payload is a list of ServerInfo objects
 	var serverList = [];
 	for(key in payload) {
 		console.log("deserializing: ");
@@ -35,5 +32,6 @@ ServerExchange.register("ServerList", function(payload) {
 });
 
 ServerExchange.register("ServerInfo", function(payload) {
+	// we're assuming the payload is a ServerInfo
 	return ServerInfo.copy(payload);
 });

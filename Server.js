@@ -69,14 +69,15 @@ gateKeeperConnection.on('message', function (event) {
 gateKeeperConnection.connect();
 
 
-//let's also kick off the player's websocket thinger!
-// TODO! let people actually connect!
+
 var clientList = [];
 
 var clientSocket = ws.createServer({port:ServerSettings.defaultPort}, function (connection) {
 	// a new client has joined
 	clientList.push(connection);
-	console.log("new client joined!");
+
+	//we should ask him for a password if this server uses passwords
+	//and if he doesn't respond with the right password in time, kick him
 
 	connection.onmessage = function(event) {
 		var exc = ServerExchange.import(event.data);
@@ -87,11 +88,12 @@ var clientSocket = ws.createServer({port:ServerSettings.defaultPort}, function (
 	};
 
 	connection.onclose = function() {
-		// client left the server itself
+		//the client left the game server
 		clientList.splice(clientList.indexOf(connection), 1);
 	};
 });
 
+//send a message to all clients in-game
 clientSocket.broadcast = function(str) {
 	for(key in clientList) {
 		clientList[key].send(str);

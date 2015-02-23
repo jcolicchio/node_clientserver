@@ -22,6 +22,10 @@ exports.init = function(webPort) {
 				return;
 			}
 
+			// TODO: 
+			// This modification makes it load /client/index.html whenever you don't try to load a file
+			// Change it such that it only appends /client when the target is /
+			// And it appends /index.html when the target is a directory
 			if (fs.statSync(filename).isDirectory()) {
 				filename += '/client/index.html';
 			}
