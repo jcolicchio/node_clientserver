@@ -23,10 +23,6 @@ var HTTPServer = require('./HTTPServer.js').init(GateKeeperInfo.webPort);
 
 // **** CLIENT COMMUNICATION ****
 
-// TODO: move these into properties of the clientSocket and serverSocket items
-// clientSocket.clients or clientSocket.connections or .list or something
-var clientList = [];
-
 //server items should be used like this
 //every time the client wants to refresh, should we blast the servers with a request?
 //another thing we could do is forward the "requesting" client with asynchronous info responses as they arrive?
@@ -35,7 +31,7 @@ var clientList = [];
 // set up the socket that listens for clients
 var clientSocket = ws.createServer({port:GateKeeperInfo.clientPort}, function (connection) {
 	// a new client has joined
-	clientList.push(connection);
+	clientSocket.clients.push(connection);
 
 	//send the new client the list of game servers
 	var list = serverSocket.generateServerList();
@@ -56,15 +52,17 @@ var clientSocket = ws.createServer({port:GateKeeperInfo.clientPort}, function (c
 
 	connection.onclose = function() {
 		// client left the server itself
-		clientList.splice(clientList.indexOf(connection), 1);
+		clientSocket.clients.splice(clientSocket.clients.indexOf(connection), 1);
 	};
 });
 
 clientSocket.broadcast = function(str) {
-	for(key in clientList) {
-		clientList[key].send(str);
+	for(key in clientSocket.clients) {
+		clientSocket.clients[key].send(str);
 	}
 }
+
+clientSocket.clients = [];
 
 
 // **** SERVER COMMUNICATION ****
@@ -77,6 +75,8 @@ clientSocket.broadcast = function(str) {
 var serverList = [];
 
 serverSocket = io.listen(HTTPServer);
+
+serverSocket.servers = [];
 
 serverSocket.on('connection', function (socket) {
 	
@@ -93,7 +93,7 @@ serverSocket.on('connection', function (socket) {
 	// "official" implementation
 	// Or, we'll just whitelist local servers
 
-	serverList.push(socket);
+	serverSocket.servers.push(socket);
 
 	//outright ask for their info!
 	socket.emit("message", serverSocket.serverInfoRequest());
@@ -108,7 +108,7 @@ serverSocket.on('connection', function (socket) {
 			exc.payload.ip = socket.conn.remoteAddress;
 
 			// We can't use socket as key, it's too complex
-			//instead, we can search for the entry in serverList, and use the index as a key
+			//instead, we can search for the entry in serverSocket.servers, and use the index as a key
 
 			socket.serverItem = exc.payload;
 
@@ -119,14 +119,14 @@ serverSocket.on('connection', function (socket) {
 
 	socket.on('disconnect', function() {
 		// a server went down
-		serverList.splice(serverList.indexOf(socket), 1);
+		serverSocket.servers.splice(serverSocket.servers.indexOf(socket), 1);
 	});
 });
 
 // send a message to every server
 serverSocket.broadcast = function(str) {
-	for(key in serverList) {
-		serverList[key].emit("message", str);
+	for(key in serverSocket.servers) {
+		serverSocket.servers[key].emit("message", str);
 	}
 }
 
@@ -147,8 +147,8 @@ serverSocket.serverInfoRequest = function() {
 // this method doesn't clear any caches, it just takes serverItems and turns its values into an array
 serverSocket.generateServerList = function() {
 	var list = [];
-	for(key in serverList) {
-		list.push(serverList[key].serverItem);
+	for(key in serverSocket.servers) {
+		list.push(serverSocket.servers[key].serverItem);
 	}
 	return list;
 }

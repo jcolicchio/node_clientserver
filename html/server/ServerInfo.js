@@ -50,6 +50,9 @@
 	exports.copy = ServerInfo.copy;
 	exports.import = ServerInfo.import;
 
+
+	// **** ServerExchange Registration ****
+
 	// TODO: make sure to mention that every smart class needs to register with ServerExchange!
 	ServerExchange.register("ServerList", function(payload) {
 		//we're assuming payload is a list of ServerInfo objects

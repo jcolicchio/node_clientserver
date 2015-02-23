@@ -5,7 +5,8 @@
 // for when you want to connect to a game server
 // Presently, it passes in a ServerInfo object
 
-// TODO: allow user to disconnect from GateKeeper
+// TODO: have GK disconnect players when they successfully auth to the server
+// rather than have GKClient disconnect players when they successfully connect to a server
 // They don't need to be connected to the GK, as far as i can tell,
 // If they've joined a game. So I think when you click join, it should wipe the UI element, disconnect you
 // And then if the player gets disconnected, they can call connect() again

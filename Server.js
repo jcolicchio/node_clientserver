@@ -135,30 +135,14 @@ var clientSocket = ws.createServer({port:port}, function (connection) {
 	// a new client has joined
 	clientList.push(connection);
 
+	// TODO: do we verify oauth before or after verifying the attempted connector has the right password?
+
 	if(hasPassword) {
 		connection.send(JSON.stringify(ServerExchange.new("password", null)));
 	} else {
 
-		// TODO: don't do this immediately...
-		// on connect, add a connection, but don't necessarily add a "player"
 		// until we can verify his oauth identity and, optionally, he gets the password right
-		players.push(connection);
-
-
-		// one thing that we'll have to do if we implement oauth, is ask the client for his oauth token
-		// if he provides it, we need to double-check with gatekeeper to verify the client's identity
-		// this is the mechanic we'll use for identity validation in server games
-
-		// remember there may be a password set in the future, so if there is, we need to ask the user
-		// and if he returns the wrong password, don't even update the server
-		gateKeeper.sendUpdatedInfo();
-
-		// we should ask him for a password if this server uses passwords
-		// and if he doesn't respond with the right password in time, kick him
-
-		for(key in chatHistory) {
-			connection.send(chatHistory[key]);
-		}
+		clientSocket.addPlayer(connection);
 	}
 
 	connection.onmessage = function(event) {
@@ -177,11 +161,7 @@ var clientSocket = ws.createServer({port:port}, function (connection) {
 				// note this is repeated code, refactor this
 				// TODO: refactor player auth/connection to its own event
 				connection.authorized = true;
-				players.push(connection);
-				gateKeeper.sendUpdatedInfo();
-				for(key in chatHistory) {
-					connection.send(chatHistory[key]);
-				}
+				clientSocket.addPlayer(connection);
 			} else {
 				//reject them! ask again or drop!
 				connection.send(JSON.stringify(ServerExchange.new("password", null)));
@@ -200,9 +180,18 @@ var clientSocket = ws.createServer({port:port}, function (connection) {
 	};
 });
 
-//send a message to all clients in-game
+//send a message to all clients in-game who have authenticated
 clientSocket.broadcast = function(str) {
-	for(key in clientList) {
-		clientList[key].send(str);
+	for(key in players) {
+		players[key].send(str);
+	}
+}
+
+// add player, inform him of updates, etc
+clientSocket.addPlayer = function(connection) {
+	players.push(connection);
+	gateKeeper.sendUpdatedInfo();
+	for(key in chatHistory) {
+		connection.send(chatHistory[key]);
 	}
 }

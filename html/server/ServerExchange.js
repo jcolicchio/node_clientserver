@@ -1,3 +1,7 @@
+// Generic class for sending smart objects with functions back and forth across websockets, etc
+// use import to turn JSON into a server exchange object, this will fully qualify the payload
+// if the given key has been registered with a proper method for turning data into an object
+
 (function(exports) {
 	
 	var ServerExchange = {};

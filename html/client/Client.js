@@ -34,7 +34,6 @@ var connectToServer = function(serverInfo) {
 		disconnectFromGateKeeper();
 
 		setStatus("Connected! ");
-		// TODO: "disconnect" button
 		$('#serverstatus').append("<input type='submit' id='disconnect' value='Disconnect' />");
 		
 		server.connected = true;
@@ -81,6 +80,12 @@ $(document).ready(function(){
 	$('body').on('click', '#send', function(e) {
 		server.send(JSON.stringify(ServerExchange.new("message", $('#message').val())));
 		$('#message').val("");
+	});
+
+	$('body').on('keydown', '#message', function(e) {
+		if(e.keyCode == 13) {
+			$('#send').click();
+		}
 	});
 
 	// This is a connection to the GateKeeper

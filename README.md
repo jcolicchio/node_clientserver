@@ -1,6 +1,10 @@
 # node_clientserver
 I'm writing some js code that can run on both client and node-server
 
+Quick start
+Make sure ports 8080, 12345, and 12346 are open
+node GateKeeper & node Server -n Servername -p 12346
+
 Here's all the files you might find in a basic framework+simple app scenario
 I gloss over index.html, jquery.min.js, and main.css because those are boring
 
@@ -35,8 +39,11 @@ This is a directory available to all clients
 This is the directory for code that's used exclusively by the client
 
 /html/client/Client.js
-This is the client base javascript file, it connects to the gatekeeper
+This is the client base javascript file, it connects to the the server
 In a real application, it would have code for rendering the game state, listing servers, connecting to a server, etc
+
+/html/client/GateKeeperClient.js
+This is boilerplate code to connect to the GateKeeper, developers probably won't have to mess with this much
 
 /html/server
 This is the directory for code that's shared between client and server
