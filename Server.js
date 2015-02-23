@@ -30,8 +30,8 @@ var ServerSettings = require('./ServerSettings.js');
 
 
 var players = [];
-console.log("server going up! connecting to gate keeper at http://"+GateKeeperInfo.hostname+":"+GateKeeperInfo.webPort);
-//for now, we're just connecting to localhost, joecolicch.io
+
+//connect to the gatekeeper
 gateKeeperConnection = io.connect('http://'+GateKeeperInfo.hostname+':'+GateKeeperInfo.webPort);
 gateKeeperConnection.on('connect', function () {
 	console.log("Connection opened");
@@ -41,32 +41,28 @@ gateKeeperConnection.on('disconnect', function () {
 	console.log("Connection closed");
 	// connection to the server went down
 	// TODO: alert current players, and try to re-connect?
-});
 
-//gateKeeperConnection.onerror = function () {
-//	console.error("Connection error");
-//}
+});
 
 //TODO: use a command line arg for port, fall back to settings
 
 gateKeeperConnection.on('message', function (event) {
 
-	console.log("gatekeeper speaks!: "+event);
 	var exc = ServerExchange.import(event);
 
 	if(exc.key == "ServerInfo") {
-		//we need to send our info
+		// gate keeper is asking for a heartbeat, send him our info
 		var info = ServerInfo.new(
 			ServerSettings.name, 
-			null, 
+			null, // the IP will be filled in on the other side where it's easily accessible
 			ServerSettings.defaultPort, 
 			players.length, 
 			ServerSettings.capacity, 
 			ServerSettings.hasPassword);
 
-		console.log("sending!");
 		gateKeeperConnection.emit("message", JSON.stringify(ServerExchange.new("ServerInfo", info)));
-		console.log("sent!");
+	} else {
+		console.log("unknown message type: "+exc.key+" sent to server from gatekeeper, with payload: "+JSON.stringify(exc.payload));
 	}
 });
 

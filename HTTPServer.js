@@ -9,8 +9,10 @@ var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
 // in general, we want it to use html/client as the base path, but allow access to html/server
 exports.init = function(webPort) {
 	var server = http.createServer(function (request, response) {
-		var uri = url.parse(request.url).pathname
+		var uri = "html/"+url.parse(request.url).pathname
 		, filename = path.join(process.cwd(), uri);
+
+		console.log(uri+", "+filename);
 
 		fs.exists(filename, function(exists) {
 			if(!exists) {
@@ -21,7 +23,7 @@ exports.init = function(webPort) {
 			}
 
 			if (fs.statSync(filename).isDirectory()) {
-				filename += '/index.html';
+				filename += '/client/index.html';
 			}
 
 			fs.readFile(filename, "binary", function(err, file) {

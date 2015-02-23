@@ -1,3 +1,4 @@
+// we need ws for client-to-server communication
 var ws = require('ws');
 // we need io for server-to-server communication
 var io = require('socket.io');
@@ -57,7 +58,6 @@ clientSocket.broadcast = function(str) {
 }
 
 
-//var serverSocket = ws.createServer({port:GateKeeperInfo.serverPort}, function(connection) {
 serverSocket = io.listen(HTTPServer);
 
 serverSocket.on('connection', function (socket) {
@@ -72,23 +72,19 @@ serverSocket.on('connection', function (socket) {
 	
 	socket.on("message", function (data) {
 
-		console.log("new message!");
 		var exc = ServerExchange.import(data);
-		console.log("a");
 		
 		if(exc.key == "ServerInfo") {
-			//exc.payload.ip = connection.
-			exc.payload.ip = socket.conn.remoteAddress;
-			//for(key in serverList) {
-			//	if(key == socket) {
-			//		console.log("theyre equal!");
-			//	}
-			//}
-			// We can't use socket as key, it's too complex
-			var key = serverList.indexOf(socket);
-			serverItems[key] = exc.payload;
-			console.log(JSON.stringify(serverItems));
 
+			exc.payload.ip = socket.conn.remoteAddress;
+
+			// We can't use socket as key, it's too complex
+			//instead, we can search for the entry in serverList, and use the index as a key
+
+			serverItems[serverList.indexOf(socket)] = exc.payload;
+
+		} else {
+			console.log("unknown message type: "+exc.key+" sent to gatekeeper from server, with payload: "+JSON.stringify(exc.payload));
 		}
 	});
 
