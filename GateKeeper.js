@@ -69,8 +69,6 @@ serverSocket.on('connection', function (socket) {
 	//outright ask for their info!
 	socket.emit("message", serverSocket.serverInfoRequest());
 
-	console.log(socket);
-
 	
 	socket.on("message", function (data) {
 
@@ -83,6 +81,7 @@ serverSocket.on('connection', function (socket) {
 			exc.payload.ip = socket.conn.remoteAddress;
 			console.log(exc.payload);
 			serverItems[socket] = exc.payload;
+			console.log(serverItems.length+" servers");
 
 		}
 	});
