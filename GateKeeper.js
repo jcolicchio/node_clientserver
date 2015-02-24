@@ -38,6 +38,8 @@ var clientSocket = ws.createServer({port:GateKeeperInfo.clientPort}, function (c
 	connection.send(JSON.stringify(ServerExchange.new("ServerList", list)));
 	
 	connection.onmessage = function(event) {
+		// TODO: try catch! user might try to break the server
+		
 		var exc = ServerExchange.import(event.data);
 
 		if(exc.key == "ServerList") {
@@ -79,7 +81,8 @@ serverSocket = io.listen(HTTPServer);
 serverSocket.servers = [];
 
 serverSocket.on('connection', function (socket) {
-	
+	// TODO: try catch! user might try to break the server
+
 	// a new server has joined
 
 	// TODO: check whitelist or blacklist if either is real

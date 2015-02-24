@@ -3,7 +3,8 @@ I'm writing some js code that can run on both client and node-server
 
 Quick start
 Make sure ports 8080, 12345, and 12346 are open
-node GateKeeper & node Server -n Servername -p 12346
+From root directory, run: `node GateKeeper & node Server -n Servername -p 12346 &`
+Access localhost:8080
 
 Here's all the files you might find in a basic framework+simple app scenario
 I gloss over index.html, jquery.min.js, and main.css because those are boring
@@ -61,3 +62,10 @@ You register these methods manually with ServerExchange.register(key, function)
 This is a customizable file representing the state of the server
 The GateKeeper requests these objects from each server, and each server responds with one
 
+
+
+Pressing Tasks:
+OAuth with Facebook or something
+Implement whitelist/blacklist for incoming server connections
+Devise a scheme for allowing servers to authenticate new connections with the GateKeeper
+Create a better game example

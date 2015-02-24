@@ -129,7 +129,7 @@ var clientList = [];
 var players = [];
 
 var chatHistory = [];
-var maxChatLength = 5;
+var maxChatHistory = 5;
 
 var clientSocket = ws.createServer({port:port}, function (connection) {
 	// a new client has joined
@@ -146,6 +146,8 @@ var clientSocket = ws.createServer({port:port}, function (connection) {
 	}
 
 	connection.onmessage = function(event) {
+		// TODO: try catch! User might try to break the server
+		
 		var exc = ServerExchange.import(event.data);
 
 		if(exc.key == "message") {
