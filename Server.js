@@ -153,7 +153,6 @@ var clientSocket = ws.createServer({port:port}, function (connection) {
 			// make sure they got the right pw
 			if(exc.payload == password) {
 				// note this is repeated code, refactor this
-				// TODO: refactor player auth/connection to its own event
 				connection.authorized = true;
 				clientSocket.addPlayer(connection);
 			} else {

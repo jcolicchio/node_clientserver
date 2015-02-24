@@ -93,5 +93,19 @@ Here's all the files you might find in a basic framework+simple app scenario. I 
 * Some kind of backend to store player stats, 
 * Implement whitelist/blacklist for incoming server connections
 * Devise a scheme for allowing servers to authenticate new connections with the GateKeeper
+ * At the end of this process, GK should disconnect the player from GK, and have them reconnect when done with the server
+ * No reason for a player in-game to sit around on GK
 * Create a better game example. I'm thinking Risk, DiceWars, or Pong or something
+
+## Easier Tasks:
+* Try-catch on user-submitted data, of any kind, including server->GateKeeper
+* Make sure we're going HTTPServer locked to html/ folder properly, we want to make sure the root JS is inaccessible
+ * Reason being, some .js files have private config info stored in them, right?
+* Drop unresponsive servers from GateKeeper's listing
+* Heartbeat for each Server
+ * Hand in hand with this, a mechanic for allowing players to "refresh" and live-update the refreshed listing of servers
+
+## Future Stuff:
+* When/how/why should we alert players in-server when the server loses connection with GateKeeper?
+ * Might be important if the server reports user scores etc back to the GK at the end of the game
 

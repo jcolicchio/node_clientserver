@@ -5,8 +5,6 @@ var path = require('path');
 
 var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
 
-// TODO: make it look in html, and default to html/client/index.html
-// in general, we want it to use html/client as the base path, but allow access to html/server
 exports.init = function(webPort) {
 	var server = http.createServer(function (request, response) {
 
