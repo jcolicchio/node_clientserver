@@ -50,25 +50,6 @@ for(var i=3;i<process.argv.length;i+=2) {
 	}
 }
 
-if(process.argv.length > 2) {
-	// if it has a ., it's an IP
-	var firstArg = process.argv[2];
-	if(firstArg.indexOf(".") >= 0) {
-		host = firstArg;
-		if(host.indexOf(":") < 0) {
-			host += ":"+GateKeeperInfo.webPort;
-		}
-	} else {
-		// could either be port or password, assume port for now
-		port = firstArg;
-	}
-}
-if(process.argv.length > 3) {
-	var secondArg = process.argv[3];
-	port = secondArg;
-}
-
-
 // **** GATEKEEPER INTERACTION ****
 
 //connect to the gatekeeper
