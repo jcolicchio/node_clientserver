@@ -27,14 +27,6 @@ var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
 var ServerInfo = require('./html/server/ServerInfo.js');
 var ServerSettings = require('./ServerSettings.js');
 
-//TODO: fix up command line args
-
-// -n name
-// -s secret
-// -p port
-// -g gatekeeper with optional :8080 or so
-
-
 // **** COMMAND LINE PROCESSING ****
 
 var host = GateKeeperInfo.hostname+":"+GateKeeperInfo.webPort;
