@@ -105,6 +105,7 @@ Here's all the files you might find in a basic framework+simple app scenario. I 
 * Drop unresponsive servers from GateKeeper's listing
 * Heartbeat for each Server
  * Hand in hand with this, a mechanic for allowing players to "refresh" and live-update the refreshed listing of servers
+* Timeouts when connections fail
 
 ## Future Stuff:
 * When/how/why should we alert players in-server when the server loses connection with GateKeeper?
