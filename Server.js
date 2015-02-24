@@ -29,7 +29,7 @@ var ServerSettings = require('./ServerSettings.js');
 
 // **** COMMAND LINE PROCESSING ****
 
-var host = GateKeeperInfo.hostname+":"+GateKeeperInfo.webPort;
+var host = ServerSettings.defaultGateKeeper+":"+GateKeeperInfo.webPort;
 var port = ServerSettings.defaultPort;
 var name = ServerSettings.name;
 var hasPassword = ServerSettings.hasPassword;

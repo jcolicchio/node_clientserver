@@ -6,7 +6,7 @@ I'm writing some js code that can run on both client and node-server
 
 * Make sure ports 8080, 12345, and 12350 are open
 * From root directory, run: ```npm install```
-* Then run: ```node GateKeeper & node Server &```
+* Then run: ```node GateKeeper & node Server -g <your external IP>:8080 &```
 * Navigate to ```localhost:8080``` in your browser
 
 * Server accepts the following command-line arguments:

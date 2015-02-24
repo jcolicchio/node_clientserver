@@ -21,6 +21,7 @@ exports.name = "Awesome Server";
 exports.defaultPort = 12350;
 exports.capacity = 8;
 exports.hasPassword = false;
+exports.defaultGateKeeper = "joecolicch.io";
 
 //maybe in the future:
 //exports.password = "dingus";
