@@ -90,6 +90,9 @@ Here's all the files you might find in a basic framework+simple app scenario. I 
 * The GateKeeper requests these objects from each server, and each server responds with one
 
 ## Pressing Tasks:
+* Turn Server.js into a module, exposing the parts that might get used in something like GameTypeServer.js
+ * GameTypeServer.js would require Server.js, and contain the game specifics
+ * Server.js handles GK standard communication
 * OAuth with Facebook or something
 * Some kind of backend to store player stats, 
 * Implement whitelist/blacklist for incoming server connections

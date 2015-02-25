@@ -17,11 +17,10 @@
 // WinningLength: 5? Maybe this'd go in some more public-facing stuff
 // Maybe that's part of the ServerInfo.js, which gets passed 
 
-exports.name = "Awesome Server";
-exports.defaultPort = 12350;
-exports.capacity = 8;
-exports.hasPassword = false;
-exports.defaultGateKeeper = "joecolicch.io";
-
-//maybe in the future:
-//exports.password = "dingus";
+exports.defaults = {
+	name: "Default Server Name",
+	host: "joecolicch.io",
+	port: 12350,
+	capacity: 8,
+	password: null
+};

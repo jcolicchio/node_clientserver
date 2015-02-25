@@ -2,6 +2,10 @@
 // use import to turn JSON into a server exchange object, this will fully qualify the payload
 // if the given key has been registered with a proper method for turning data into an object
 
+// TODO: I've been thinking of standardizing ServerExchange keys
+// camelCase for dumb data with no registration, simple JSON passthrough
+// ClassCase for smart-objects or lists of smart objects, which need special registration
+
 (function(exports) {
 	
 	var ServerExchange = {};

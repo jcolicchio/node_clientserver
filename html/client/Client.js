@@ -1,13 +1,7 @@
 // This is the client, should be pretty much custom code here
 
 var ServerExchange = this['ServerExchange'];
-if(ServerExchange === undefined) {
-	ServerExchange = require('../server/ServerExchange.js');
-}
 var ServerInfo = this['ServerInfo'];
-if(ServerInfo === undefined) {
-	ServerInfo = require('../server/ServerInfo.js');
-}
 
 var server;
 
