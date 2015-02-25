@@ -4,7 +4,8 @@ var ServerExchange = this['ServerExchange'];
 var ServerInfo = this['ServerInfo'];
 
 var server;
-var me = null;
+var me;
+var players;
 
 var clientContent;
 var serverStatus;
@@ -104,6 +105,29 @@ var newMessage = function(message) {
 	}
 }
 
+var renderCanvas = function() {
+	ctx.fillStyle = "black";
+	ctx.fillRect(0, 0, 400, 400);
+	
+	// we're just showing off here
+	// I want to demonstrate that each "Player object" we received from the server
+	// has an intact ".equal" method, which we use to determine which players *aren't* 'me'
+	// instead of drawing our 'me' player based on laggy server input, we'll draw him at mouse coords
+	
+	ctx.fillStyle = me.color;
+	var size = 30;
+	ctx.fillRect(me.pos.x-size/2, me.pos.y-size/2, size, size);
+
+	for(key in players) {
+		var player = players[key];
+		if(!player.equal(me)) {
+			ctx.fillStyle = player.color;
+			var size = 20;
+			ctx.fillRect(player.pos.x-size/2, player.pos.y-size/2, size, size);
+		}
+	}
+}
+
 //jquery stuff for setting up the page, most of this code is
 $(document).ready(function(){
 
@@ -159,15 +183,9 @@ var connectToServer = function(serverInfo) {
 			$("input[name='color'][value='"+exc.payload.color+"']").click();
 		} else if(exc.key == "PlayerList") {
 			console.log(exc.payload);
+			players = exc.payload;
 
-			ctx.fillStyle = "black";
-			ctx.fillRect(0, 0, 400, 400);
-
-			for(key in exc.payload) {
-				var player = exc.payload[key];
-				ctx.fillStyle = player.color;
-				ctx.fillRect(player.pos.x-10, player.pos.y-10, 20, 20);
-			}
+			renderCanvas();
 
 		} else {
 			console.log("server sent client unknown key: "+exc.key+" with payload: "+exc.payload);
