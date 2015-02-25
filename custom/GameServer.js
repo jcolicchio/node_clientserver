@@ -1,44 +1,61 @@
-// create server "GameServer" at joecolicch.io:8080 with port 12350, capacity 8, password "dingus"
-
-
-var Server = require('../Server.js')("GameServer", "joecolicch.io:8080", 12350, 8, "dingus");
+var Server = require('../Server.js')();
 
 var Player = require('../html/server/GameServer/Player.js');
 
-// not implemented, since we're using default
-//Server.getInfo = function() {
-//	return ServerInfo.new("GameServer")
-//}
-
 var players = [];
+var playerId = 0;
+
+var chatHistory = [];
+var chatHistoryLength = 10;
+
+var pushChatHistory = function(entry) {
+	chatHistory.push(entry);
+	if(chatHistory.length > chatHistoryLength) {
+		chatHistory.splice(0, chatHistory.length - chatHistoryLength);
+	}
+}
 
 Server.onConnect = function(client) {
-	players[client] = Player.new(42, "Anon132");
+	Server.send(client, "joined", null);
+
+	var player = Player.new(++playerId, "Anon"+playerId);
+	client.player = player;
+	for(key in chatHistory) {
+		Server.send(client, "message", chatHistory[key].name+": "+chatHistory[key].message);
+	}
+	Server.broadcast("message", "Server: "+player.name+" has joined!");
+	pushChatHistory({name: "Server", message: player.name+" has joined!"});
+	Server.send(client, "message", "<i>&lt;Server: Thanks for joining!&gt;</i>");
+	Server.send(client, "Player", player);
+
+	var list = [];
+	for(key in Server.clients) {
+		list.push(Server.clients[key].player);
+	}
+	Server.broadcast("PlayerList", list);
 }
 
 Server.onDisconnect = function(client) {
-	delete players[client];
+	var player = client.player;
+	Server.broadcast("message", "Server: "+player.name+" has left!");
+	pushChatHistory({name: "Server", message: player.name+" has left!"});
+
+	var list = [];
+	for(key in Server.clients) {
+		list.push(Server.clients[key].player);
+	}
+	Server.broadcast("PlayerList", list);
 }
 
 Server.onMessage = function(client, key, payload) {
 	if(key == "message") {
-		Server.broadcast("message", players[client].name+": "+payload);
+		pushChatHistory({name: client.player.name, message: payload});
+		Server.broadcast("message", client.player.name+": "+payload);
 	} else if(key == "Player") {
-		players[client].name = payload.name;
+		client.player.name = payload.name;
 	}
 }
 
 Server.onError = function(client, error) {
-	//console.log("error!");
+	console.log("error! "+error);
 }
-
-
-// some pre-defined methods
-// onMessage is called with client, and their key and payload of their exchange
-// Server.broadcast = function(key, payload) { // send message to all clients}
-
-// Server.send(client, key, payload)
-
-//	Server.getInfo = function() {
-//		return ServerInfo.new(Server.name, Server.host, Server.port, Server.);
-//	}

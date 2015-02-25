@@ -58,12 +58,12 @@ var connectToGateKeeper = function(connectionFunction){
 
 	gateKeeper = new WebSocket("ws://"+window.location.hostname+":"+GateKeeperInfo.clientPort);
 	gateKeeper.onopen = function () {
-		console.log("Connection opened");
+		console.log("Connection to GK opened");
 		
 		gateKeeper.connected = true;
 	}
 	gateKeeper.onclose = function () {
-		console.log("Connection closed");
+		console.log("Connection to GK closed");
 		gateKeeper.connected = false;
 
 		//gateKeeper = null;

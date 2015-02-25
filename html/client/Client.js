@@ -4,39 +4,105 @@ var ServerExchange = this['ServerExchange'];
 var ServerInfo = this['ServerInfo'];
 
 var server;
+var me = null;
+
+var clientContent;
+var serverStatus;
+var messages;
+
+var initUI = function() {
+	clientContent = $("<div id='clientcontent'></div>");
+	$('body').append(clientContent);
+
+	serverStatus = $("<div id='serverstatus'></div>");
+	clientContent.append(serverStatus).append("<br/>");
+
+	setStatus("Connecting...");
+}
+
+var connectUI = function() {
+	setStatus("Connected! ");
+
+	var disconnectButton = $("<input type='submit' id='disconnect' value='Disconnect' />");
+	serverStatus.append(disconnectButton);
+	disconnectButton.on("click", function(e) {
+		server.close();
+	});
+
+	messages = $("<div id='chat'></div>");
+	clientContent.append(messages).append("<br/>");
+
+	var textBox = $("<input type='text' id='message' />");
+	var sendButton = $("<input type='submit' id='send' value='Send' />");
+	clientContent.append(textBox).append(sendButton).append("<br/>");
+
+	sendButton.on("click", function(e) {
+		server.send(JSON.stringify(ServerExchange.new("message", textBox.val())));
+		textBox.val("");
+	});
+
+	textBox.on("keydown", function(e) {
+		if(e.keyCode == 13) {
+			sendButton.click();
+		}
+	});
+}
+
+var disconnectUI = function() {
+	clientContent.remove();
+}
+
+var setStatus = function(status) {
+	serverStatus.empty().append(status);
+}
+
+var newMessage = function(message) {
+	// check to see if it's scrolled to bottom
+	var elem = messages[0];
+	var scrollToBottom = false;
+	console.log(elem.scrollTop+", "+elem.scrollHeight+", "+messages.height());
+	if(elem.scrollTop + messages.height() == elem.scrollHeight) {
+		scrollToBottom = true;
+	}
+	messages.append(message).append("<br/>");
+	if(scrollToBottom) {
+		elem.scrollTop = elem.scrollHeight;
+		console.log("scroll to bot!");
+	} else {
+		elem.scrollTop = elem.scrollTop+1;
+		elem.scrollTop = elem.scrollTop-1;
+	}
+}
+
+//jquery stuff for setting up the page, most of this code is
+$(document).ready(function(){
+
+	// This is a connection to the GateKeeper
+	// The argument is a callback for connecting to our own server, given one of our serverinfo objects
+	connectToGateKeeper(connectToServer);
+
+});
+
 
 // custom stuff specific to our game server itself
 // note: we'll receive a ServerInfo object from GateKeeperClient.js
 var connectToServer = function(serverInfo) {
 
-	// UI for "connecting...";
-	var clientContent = $("<div id='clientcontent'></div>");
-	$('body').append(clientContent);
-
-	var serverStatus = $("<div id='serverstatus'></div>");
-	clientContent.append(serverStatus).append("<br/>");
-
-	clientContent.append("<div id='chat'></div><br/>");
-	clientContent.append("<input type='text' id='message' /><input type='submit' id='send' value='Send' />");
-
-	setStatus("Connecting...");
+	initUI();
 
 	server = new WebSocket("ws://"+serverInfo.serverString());
 	server.onopen = function () {
 		console.log("Connection to server opened");
 
 		disconnectFromGateKeeper();
-
-		setStatus("Connected! ");
-		$('#serverstatus').append("<input type='submit' id='disconnect' value='Disconnect' />");
 		
 		server.connected = true;
 	}
 	server.onclose = function () {
-		console.log("Connection closed");
+		console.log("Connection to server closed");
 		server.connected = false;
 
-		$('#clientcontent').remove();
+		disconnectUI();
 
 		// we disconnected from game, connect to GK again!
 		connectToGateKeeper(connectToServer);
@@ -47,43 +113,23 @@ var connectToServer = function(serverInfo) {
 	server.onmessage = function (event) {
 		var exc = ServerExchange.import(event.data);
 
-		if(exc.key == "message") {
-			console.log("game server said: "+exc.payload);
-			$('#chat').append(exc.payload+"<br/>");
+		if(exc.key == "joined") {
+			connectUI();
+		} else if(exc.key == "message") {
+			newMessage(exc.payload);
 		} else if(exc.key == "password") {
 			// the server has a password
-			console.log("whats the password");
 			var pw = prompt("Password?");
 			server.send(JSON.stringify(ServerExchange.new("password", pw)));
+		} else if(exc.key == "Player") {
+			me = exc.payload;
+
+		} else if(exc.key == "PlayerList") {
+			console.log(exc.payload);
+		} else {
+			console.log("server sent client unknown key: "+exc.key+" with payload: "+exc.payload);
 		}
 	}
 }
 
-// UI stuff?
-var setStatus = function(status) {
-	$('#serverstatus').empty().append(status);
-}
 
-//jquery stuff for setting up the page, most of this code is
-$(document).ready(function(){
-
-	$('body').on('click', '#disconnect', function(e) {
-		server.close();
-	});
-
-	$('body').on('click', '#send', function(e) {
-		server.send(JSON.stringify(ServerExchange.new("message", $('#message').val())));
-		$('#message').val("");
-	});
-
-	$('body').on('keydown', '#message', function(e) {
-		if(e.keyCode == 13) {
-			$('#send').click();
-		}
-	});
-
-	// This is a connection to the GateKeeper
-	// The argument is a callback for connecting to our own server, given one of our serverinfo objects
-	connectToGateKeeper(connectToServer);
-
-});

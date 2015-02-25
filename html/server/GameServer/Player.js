@@ -38,4 +38,12 @@
 		return Player.copy(payload);
 	});
 
+	ServerExchange.register("PlayerList", function(payload) {
+		var list = [];
+		for(key in payload) {
+			list.push(Player.copy(payload[key]));
+		}
+		return list;
+	});
+
 })(typeof exports === 'undefined'? this['Player']={}: exports);

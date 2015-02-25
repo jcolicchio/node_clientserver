@@ -1,3 +1,10 @@
 body {
 	background-color: orange;
 }
+
+#chat {
+	background: #ddd;
+	width: 400px;
+	max-height: 240px;
+	overflow-y: scroll;
+}

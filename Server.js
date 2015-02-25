@@ -11,6 +11,15 @@
 // onError(connection, error) // not implemented
 // getInfo() -- implement if you do custom ServerInfo, return a ServerInfo object
 
+// You also have access to properties:
+// name, host, port, capacity, password
+// clients - list of authenticated clients
+
+// And convenience methods:
+// broadcast(key, payload) - send a key/payload ServerExchange to all clients
+// send(client, key, payload) - send key/payload ServerExchange to one client
+// sendUpdatedInfo() - update the GateKeeper by calling getInfo() and sending
+
 // Keeping scalability in mind, theoretically any user should be able to spin one of these up
 // However, if we want GateKeeper to only talk to legit servers that we control, we could
 // Put some kind of whitelist of server IPs, such that GateKeeper won't list an unauthorized server unless its IP matches
@@ -26,8 +35,6 @@ var ServerExchange = require('./html/server/ServerExchange.js');
 var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
 var ServerInfo = require('./html/server/ServerInfo.js');
 var ServerSettings = require('./ServerSettings.js');
-
-// **** COMMAND LINE PROCESSING ****
 
 module.exports = function(name, host, port, capacity, password) {
 
@@ -47,8 +54,6 @@ module.exports = function(name, host, port, capacity, password) {
 		password = ServerSettings.defaults.password;
 	}
 
-	// TODO: look at command line args for server, if possible
-	// for key in process.argv, if we want to overwrite any of these properties, do so
 	for(var i=3;i<process.argv.length;i+=2) {
 		var key = process.argv[i-1];
 		var value = process.argv[i];
@@ -63,7 +68,7 @@ module.exports = function(name, host, port, capacity, password) {
 		}
 	}
 
-	console.log
+	// TODO: verify port is numeric, or crash
 
 	var server = {
 		name: name,
@@ -71,17 +76,17 @@ module.exports = function(name, host, port, capacity, password) {
 		port: port,
 		capacity: capacity,
 		password: password,
-		connections: [], // connections is a list of all connections, no auth necessary
+
 		clients: [], // clients is a list of all authenticated clients
+
 		onConnect: null,
 		onDisconnect: null,
 		onMessage: null,
 		onError: null,
-		// returns a server info object
 		getInfo: function() {
-			// does this grab the proper "this"?
-			return ServerInfo.new(name, host, port, this.clients.length, capacity, password);
+			return ServerInfo.new(this.name, this.host, this.port, this.clients.length, this.capacity, this.password);
 		},
+
 		broadcast: function(key, payload) {
 			for(i in this.clients) {
 				this.send(this.clients[i], key, payload);
@@ -90,19 +95,42 @@ module.exports = function(name, host, port, capacity, password) {
 		send: function(client, key, payload) {
 			var exc = ServerExchange.new(key, payload);
 			client.send(JSON.stringify(exc));
+		},
+		sendUpdatedInfo: function() {
+			var info = this.getInfo();
+			this.private.gateKeeper.emit("message", JSON.stringify(ServerExchange.new("ServerInfo", info)));
+		},
+
+		private: {
+			connections: [], // no auth necessary, all connections to server auth or no
+			clientAuthenticated: function(connection) {
+				// TODO: oauth stuff?
+				connection.authenticated = true;
+				server.clients.push(connection);
+				server.sendUpdatedInfo();
+
+				if(server.onConnect) {
+					server.onConnect(connection);
+				}
+			},
+			gateKeeper: null,
+			clientSocket: null
 		}
 	};
 
-	server.gateKeeper = gateKeeper = io.connect('http://'+host);
-	server.gateKeeper.on('connect', function () {
+	server.private.gateKeeper = io.connect('http://'+host);
+	server.private.gateKeeper.on('connect', function () {
 		// as a server, when we connect to gatekeeper, we should inform him of our info
 		// he'll ask anyway though, so let's leave this for now
 	});
-	server.gateKeeper.on('disconnect', function () {
+	server.private.gateKeeper.on('disconnect', function () {
 		// connection to the server went down
 		// TODO: alert current players, and try to re-connect?
+		if(server.onError) {
+			server.onError(null, "Server disconnected from GateKeeper");
+		}
 	});
-	gateKeeper.on('message', function (event) {
+	server.private.gateKeeper.on('message', function (event) {
 		var exc = ServerExchange.import(event);
 		if(exc.key == "ServerInfo") {
 			server.sendUpdatedInfo();
@@ -110,56 +138,36 @@ module.exports = function(name, host, port, capacity, password) {
 			console.log("unknown message type: "+exc.key+" sent to server from gatekeeper: "+JSON.stringify(exc.payload));
 		}
 	});
-
-	server.sendUpdatedInfo = function() {
-		var info = this.getInfo();
-		this.gateKeeper.emit("message", JSON.stringify(ServerExchange.new("ServerInfo", info)));
-	}
-
-	server.gateKeeper.connect();
+	server.private.gateKeeper.connect();
 
 
+	server.private.clientSocket = ws.createServer({port:port}, function (connection) {
 
-	// TODO: rename, authenticateClient?
-	// confirmClient? something that confers this client has been authenticated
-	server.addClient = function(connection) {
-		// TODO: oauth stuff?
-		connection.authorized = true;
-		server.clients.push(connection);
-		server.sendUpdatedInfo();
-		/*for(key in chatHistory) {
-			connection.send(chatHistory[key]);
-		}*/
-		// callback for adding a client
-		if(server.onConnect) {
-			server.onConnect(connection);
-		}
-	}
-
-	server.clientSocket = ws.createServer({port:port}, function (connection) {
-		// client has connected to our server, add it to connections
-		server.connections.push(connection);
-		connection.authorized = false;
+		server.private.connections.push(connection);
+		connection.authenticated = false;
 
 		if(password) {
 			server.send(connection, "password", null);
 		} else {
-			server.addPlayer(connection);
+			server.private.clientAuthenticated(connection);
 		}
 
 		connection.onmessage = function(event) {
 			// TODO: try catch! User might try to break the server
+
+			// TODO: probably strip out any user text that has HTML or stuff?
+			// or should we just leave that to the custom implementation
 			
 			var exc = ServerExchange.import(event.data);
 
-			if(!connection.authorized && exc.key == "password") {
+			if(!connection.authenticated && exc.key == "password") {
 				if(exc.payload == password) {
 					// oauth here?
-					server.addClient(connection);
+					server.private.clientAuthenticated(connection);
 				} else {
 					server.send(connection, "password", null);
 				}
-			} else if(connection.authorized && server.onMessage) {
+			} else if(connection.authenticated && server.onMessage) {
 				server.onMessage(connection, exc.key, exc.payload);
 			}
 
@@ -167,7 +175,7 @@ module.exports = function(name, host, port, capacity, password) {
 
 		connection.onclose = function() {
 			//the client left the game server
-			server.connections.splice(server.connections.indexOf(connection), 1);
+			server.private.connections.splice(server.private.connections.indexOf(connection), 1);
 			server.clients.splice(server.clients.indexOf(connection), 1);
 
 			// remember to tell gatekeeper your stats changed
@@ -177,6 +185,13 @@ module.exports = function(name, host, port, capacity, password) {
 				server.onDisconnect(connection);
 			}
 		};
+
+		connection.onerror = function() {
+			console.log("error occurred!");
+			if(server.onError) {
+				server.onError(connection, "connection error, no info given");
+			}
+		}
 	});
 
 	return server;
