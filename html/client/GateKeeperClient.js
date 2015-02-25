@@ -67,7 +67,6 @@ var connectToGateKeeper = function(connectionFunction){
 		gateKeeper.connected = false;
 
 		//gateKeeper = null;
-		$('#serverlist').remove();
 	}
 	gateKeeper.onerror = function () {
 		console.error("Connection error");
@@ -115,5 +114,6 @@ var connectToGateKeeper = function(connectionFunction){
 var disconnectFromGateKeeper = function() {
 	if(gateKeeper) {
 		gateKeeper.close();
+		$('#serverlist').remove();
 	}
 }

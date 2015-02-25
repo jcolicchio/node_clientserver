@@ -60,14 +60,12 @@ var newMessage = function(message) {
 	// check to see if it's scrolled to bottom
 	var elem = messages[0];
 	var scrollToBottom = false;
-	console.log(elem.scrollTop+", "+elem.scrollHeight+", "+messages.height());
 	if(elem.scrollTop + messages.height() == elem.scrollHeight) {
 		scrollToBottom = true;
 	}
 	messages.append(message).append("<br/>");
 	if(scrollToBottom) {
 		elem.scrollTop = elem.scrollHeight;
-		console.log("scroll to bot!");
 	} else {
 		elem.scrollTop = elem.scrollTop+1;
 		elem.scrollTop = elem.scrollTop-1;
