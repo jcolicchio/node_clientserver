@@ -19,7 +19,7 @@
 
 exports.defaults = {
 	name: "Default Server Name",
-	host: "joecolicch.io",
+	host: "localhost:8080",
 	port: 12350,
 	capacity: 8,
 	password: null
