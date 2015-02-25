@@ -8,12 +8,15 @@ var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
 exports.init = function(webPort) {
 	var server = http.createServer(function (request, response) {
 
+
 		// TODO: investigate if this is secure, make sure nobody can access files outside of this folder
 		// the html/ should keep all requests within this folder, but maybe html/.. will break it out?
-		var uri = "html/"+url.parse(request.url).pathname
+		var uri = "/html"+url.parse(request.url).pathname
 		, filename = path.join(process.cwd(), uri);
 
 		fs.exists(filename, function(exists) {
+
+			// if the file doesn't exist, just end now, rather than fs.statSync a nonexistent file
 			if(!exists) {
 				response.writeHead(404, {"Content-Type": "text/plain"});
 				response.write("404 Not Found\n");
@@ -22,8 +25,16 @@ exports.init = function(webPort) {
 			}
 
 			if (fs.statSync(filename).isDirectory()) {
-				filename += '/index.html';
-			}
+				// if the request doesn't end with a slash, we need to redirect
+				if(uri[uri.length-1] != "/") {
+					response.statusCode = 302;
+					response.setHeader('Location', "http://" + request.headers['host'] + request.url + "/");
+					response.end();
+					return;
+				} else {
+					filename += "index.html";
+				}
+			}		
 
 			fs.readFile(filename, "binary", function(err, file) {
 				if(err) {
