@@ -13,6 +13,15 @@
 // The gatekeeper will note the IP of the connection and fill it in automatically
 // This is much easier than having the server figure out its own IP
 
+// TODO: add a 'type' field to server info
+// this is so that, if the gatekeeper allows multiple kinds of servers to connect
+// it can tell which is which
+// client-side, clients can differentiate between various types and filter down to only
+// the kinds of servers which the client can use
+// for instance, say 2 "Gomoku" servers and 1 "chess" server both want to connect to GK
+// if GK is configured to allow multiple server types, then clients need to either request all servers of type X
+// or clients can just client-side filter results to match their needs
+
 (function(exports){
 
 	var ServerExchange = this['ServerExchange'];
@@ -21,9 +30,10 @@
 	}
 
 	ServerInfo = {};
-	ServerInfo.new = function(name, ip, port, players, capacity, hasPassword) {
+	ServerInfo.new = function(name, type, ip, port, players, capacity, hasPassword) {
 		var serverInfo = {
 			name: name,
+			type: type,
 			ip: ip,
 			port: port,
 			players: players,
@@ -40,7 +50,7 @@
 		if(si === null) {
 			return null;
 		}
-		return ServerInfo.new(si.name, si.ip, si.port, si.players, si.capacity, si.hasPassword);
+		return ServerInfo.new(si.name, si.type, si.ip, si.port, si.players, si.capacity, si.hasPassword);
 	}
 	ServerInfo.import = function(json) {
 		return ServerInfo.copy(JSON.parse(json));

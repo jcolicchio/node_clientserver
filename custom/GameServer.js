@@ -1,31 +1,16 @@
-var Server = require('../Server.js')();
+var Server = require('../Server.js')(null, "Game");
 
-var Player = require('../html/server/GameServer/Player.js');
+var Player = require('../html/game/Player.js');
 
 var players = [];
 var playerId = 0;
-
-var chatHistory = [];
-var chatHistoryLength = 10;
-
-var pushChatHistory = function(entry) {
-	chatHistory.push(entry);
-	if(chatHistory.length > chatHistoryLength) {
-		chatHistory.splice(0, chatHistory.length - chatHistoryLength);
-	}
-}
 
 Server.onConnect = function(client) {
 	Server.send(client, "joined", null);
 
 	var player = Player.new(++playerId, "Anon"+playerId, {x: 20, y: 20}, "red");
 	client.player = player;
-	for(key in chatHistory) {
-		Server.send(client, "message", chatHistory[key].name+": "+chatHistory[key].message);
-	}
-	Server.broadcast("message", "Server: "+player.name+" has joined!");
-	pushChatHistory({name: "Server", message: player.name+" has joined!"});
-	Server.send(client, "message", "<i>&lt;Server: Thanks for joining!&gt;</i>");
+	
 	Server.send(client, "Player", player);
 
 	var list = [];
@@ -37,9 +22,7 @@ Server.onConnect = function(client) {
 
 Server.onDisconnect = function(client) {
 	var player = client.player;
-	Server.broadcast("message", "Server: "+player.name+" has left!");
-	pushChatHistory({name: "Server", message: player.name+" has left!"});
-
+	
 	var list = [];
 	for(key in Server.clients) {
 		list.push(Server.clients[key].player);
@@ -48,10 +31,7 @@ Server.onDisconnect = function(client) {
 }
 
 Server.onMessage = function(client, key, payload) {
-	if(key == "message") {
-		pushChatHistory({name: client.player.name, message: payload});
-		Server.broadcast("message", client.player.name+": "+payload);
-	} else if(key == "Player" && client.player.id == payload.id) {
+	if(key == "Player" && client.player.id == payload.id) {
 		client.player.name = payload.name;
 		client.player.pos = payload.pos;
 		client.player.color = payload.color;

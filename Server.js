@@ -36,10 +36,13 @@ var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
 var ServerInfo = require('./html/server/ServerInfo.js');
 var ServerSettings = require('./ServerSettings.js');
 
-module.exports = function(name, host, port, capacity, password) {
+module.exports = function(name, type, host, port, capacity, password) {
 
 	if(!name) {
 		name = ServerSettings.defaults.name;
+	}
+	if(!type) {
+		type = ServerSettings.defaults.type;
 	}
 	if(!host) {
 		host = ServerSettings.defaults.host;
@@ -72,6 +75,7 @@ module.exports = function(name, host, port, capacity, password) {
 
 	var server = {
 		name: name,
+		type: type,
 		host: host,
 		port: port,
 		capacity: capacity,
@@ -84,7 +88,7 @@ module.exports = function(name, host, port, capacity, password) {
 		onMessage: null,
 		onError: null,
 		getInfo: function() {
-			return ServerInfo.new(this.name, this.host, this.port, this.clients.length, this.capacity, this.password);
+			return ServerInfo.new(this.name, this.type, this.host, this.port, this.clients.length, this.capacity, this.password);
 		},
 
 		broadcast: function(key, payload) {

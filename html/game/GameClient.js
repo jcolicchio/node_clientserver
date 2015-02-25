@@ -9,7 +9,6 @@ var players;
 
 var clientContent;
 var serverStatus;
-var messages;
 var canvas;
 var ctx;
 
@@ -30,24 +29,6 @@ var connectUI = function() {
 	serverStatus.append(disconnectButton);
 	disconnectButton.on("click", function(e) {
 		server.close();
-	});
-
-	messages = $("<div id='chat'></div>");
-	clientContent.append(messages).append("<br/>");
-
-	var textBox = $("<input type='text' id='message' />");
-	var sendButton = $("<input type='submit' id='send' value='Send' />");
-	clientContent.append(textBox).append(sendButton).append("<br/>");
-
-	sendButton.on("click", function(e) {
-		server.send(JSON.stringify(ServerExchange.new("message", textBox.val())));
-		textBox.val("");
-	});
-
-	textBox.on("keydown", function(e) {
-		if(e.keyCode == 13) {
-			sendButton.click();
-		}
 	});
 
 	canvas = $("<canvas id='canvas' width=400 height=400></canvas>");
@@ -89,21 +70,6 @@ var setStatus = function(status) {
 	serverStatus.empty().append(status);
 }
 
-var newMessage = function(message) {
-	// check to see if it's scrolled to bottom
-	var elem = messages[0];
-	var scrollToBottom = false;
-	if(elem.scrollTop + messages.height() == elem.scrollHeight) {
-		scrollToBottom = true;
-	}
-	messages.append(message).append("<br/>");
-	if(scrollToBottom) {
-		elem.scrollTop = elem.scrollHeight;
-	} else {
-		elem.scrollTop = elem.scrollTop+1;
-		elem.scrollTop = elem.scrollTop-1;
-	}
-}
 
 var renderCanvas = function() {
 	ctx.fillStyle = "black";
@@ -133,7 +99,7 @@ $(document).ready(function(){
 
 	// This is a connection to the GateKeeper
 	// The argument is a callback for connecting to our own server, given one of our serverinfo objects
-	connectToGateKeeper(connectToServer);
+	connectToGateKeeper(connectToServer, "Game");
 
 });
 
@@ -160,7 +126,7 @@ var connectToServer = function(serverInfo) {
 		disconnectUI();
 
 		// we disconnected from game, connect to GK again!
-		connectToGateKeeper(connectToServer);
+		connectToGateKeeper(connectToServer, "Game");
 	}
 	server.onerror = function () {
 		console.error("Connection error");
@@ -171,8 +137,6 @@ var connectToServer = function(serverInfo) {
 		if(exc.key == "joined") {
 			console.log("joined!");
 			connectUI();
-		} else if(exc.key == "message") {
-			newMessage(exc.payload);
 		} else if(exc.key == "password") {
 			// the server has a password
 			var pw = prompt("Password?");

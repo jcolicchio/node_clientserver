@@ -2,16 +2,14 @@
 
 	var ServerExchange = this['ServerExchange'];
 	if(ServerExchange === undefined) {
-		ServerExchange = require('../ServerExchange.js');	
+		ServerExchange = require('../server/ServerExchange.js');	
 	}
 
 	Player = {};
-	Player.new = function(id, name, pos, color) {
+	Player.new = function(id, name) {
 		var player = {
 			id: id,
 			name: name,
-			pos: pos,
-			color: color,
 			equal: function(player) {
 				return this.id == player.id && this.name == player.name;
 			}
@@ -23,7 +21,7 @@
 		if(p === null) {
 			return null;
 		}
-		return Player.new(p.id, p.name, p.pos, p.color);
+		return Player.new(p.id, p.name);
 	}
 	Player.import = function(json) {
 		return Player.copy(JSON.parse(json));

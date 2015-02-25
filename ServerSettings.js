@@ -19,6 +19,7 @@
 
 exports.defaults = {
 	name: "Default Server Name",
+	type: "Chat",
 	host: "localhost:8080",
 	port: 12350,
 	capacity: 8,

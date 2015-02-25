@@ -11,8 +11,17 @@
 // If they've joined a game. So I think when you click join, it should wipe the UI element, disconnect you
 // And then if the player gets disconnected, they can call connect() again
 
+// TODO: have callback merely pass list back to user
+// TODO: create method that takes a list and generates a jquery element to add anywhere that's the list
+// but with actions to connect, etc all taken care of
+
+var GateKeeperInfo = this['GateKeeperInfo'];
+var ServerInfo = this['ServerInfo'];
+var ServerExchange = this['ServerExchange'];
+
 var gateKeeper;
 var connectionFunction = null;
+var servers = [];
 
 $(document).ready(function() {
 
@@ -38,23 +47,7 @@ $(document).ready(function() {
 	});
 });
 
-var connectToGateKeeper = function(connectionFunction){
-
-	// TODO: do these belong inside or outside the function?
-	// shouldn't hurt to have them global-ish, should it? do they belong there?
-	var GateKeeperInfo = this['GateKeeperInfo'];
-	if(GateKeeperInfo === undefined) {
-		GateKeeperInfo = require('../server/GateKeeperInfo.js');
-	}
-	var ServerInfo = this['ServerInfo'];
-	if(ServerInfo === undefined) {
-		ServerInfo = require('../server/ServerInfo.js');
-	}
-	var ServerExchange = this['ServerExchange'];
-	if(ServerExchange === undefined) {
-		ServerExchange = require('../server/ServerExchange.js');
-	}
-
+var connectToGateKeeper = function(connectionFunction, type){
 
 	gateKeeper = new WebSocket("ws://"+window.location.hostname+":"+GateKeeperInfo.clientPort);
 	gateKeeper.onopen = function () {
@@ -80,7 +73,7 @@ var connectToGateKeeper = function(connectionFunction){
 
 		//if the key is ServerList, expect a list of ServerInfo objects
 		if(exc.key == "ServerList") {
-			updateServerList(exc.payload);
+			updateServerList(exc.payload, type);
 		} else {
 			console.log("unknown key "+exc.key+" sent from GateKeeper to client");
 		}
@@ -93,17 +86,20 @@ var connectToGateKeeper = function(connectionFunction){
 	var serverList = $("<div id='serverlist'></div>");
 	$('body').append(serverList);
 
-	var updateServerList = function(serverItems) {
+	var updateServerList = function(serverItems, type) {
+		servers = serverItems;
 		$('#serverlist').empty().append("Servers: <input class='refresh' type='submit' value='Refresh' /><br/>");
 		// for each item, put it in the serverlist
 		for(key in serverItems) {
-			var s = serverItems[key];
-			var button = $("<input type='submit' value='Join' class='join' />");
-			button.data("ip", s.ip);
-			button.data("port", s.port);
-			button.data("info", s);
+			if(!type || serverItems[key].type == type) {
+				var s = serverItems[key];
+				var button = $("<input type='submit' value='Join' class='join' />");
+				button.data("ip", s.ip);
+				button.data("port", s.port);
+				button.data("info", s);
 
-			$('#serverlist').append(s.name+": "+s.ip+":"+s.port+", "+s.players+"/"+s.capacity+" ").append(button).append("<br/>");
+				$('#serverlist').append(s.name+": "+s.ip+":"+s.port+", "+s.players+"/"+s.capacity+" ").append(button).append("<br/>");
+			}
 		}
 	}
 }

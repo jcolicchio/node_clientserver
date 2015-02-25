@@ -4,7 +4,7 @@ var ServerExchange = this['ServerExchange'];
 var ServerInfo = this['ServerInfo'];
 
 var server;
-var me = null;
+var me;
 
 var clientContent;
 var serverStatus;
@@ -46,6 +46,7 @@ var connectUI = function() {
 			sendButton.click();
 		}
 	});
+
 }
 
 var disconnectUI = function() {
@@ -77,10 +78,11 @@ $(document).ready(function(){
 
 	// This is a connection to the GateKeeper
 	// The argument is a callback for connecting to our own server, given one of our serverinfo objects
-	connectToGateKeeper(connectToServer);
+	connectToGateKeeper(connectToServer, "Chat");
 
 });
 
+var server;
 
 // custom stuff specific to our game server itself
 // note: we'll receive a ServerInfo object from GateKeeperClient.js
@@ -103,7 +105,7 @@ var connectToServer = function(serverInfo) {
 		disconnectUI();
 
 		// we disconnected from game, connect to GK again!
-		connectToGateKeeper(connectToServer);
+		connectToGateKeeper(connectToServer, "Chat");
 	}
 	server.onerror = function () {
 		console.error("Connection error");
@@ -121,10 +123,11 @@ var connectToServer = function(serverInfo) {
 			var pw = prompt("Password?");
 			server.send(JSON.stringify(ServerExchange.new("password", pw)));
 		} else if(exc.key == "Player") {
+			// if the server sends a lone player, it's me
 			me = exc.payload;
-
 		} else if(exc.key == "PlayerList") {
 			console.log(exc.payload);
+			players = exc.payload;
 		} else {
 			console.log("server sent client unknown key: "+exc.key+" with payload: "+exc.payload);
 		}
