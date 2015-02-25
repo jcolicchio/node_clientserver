@@ -18,7 +18,7 @@ var pushChatHistory = function(entry) {
 Server.onConnect = function(client) {
 	Server.send(client, "joined", null);
 
-	var player = Player.new(++playerId, "Anon"+playerId);
+	var player = Player.new(++playerId, "Anon"+playerId, {x: 20, y: 20}, "red");
 	client.player = player;
 	for(key in chatHistory) {
 		Server.send(client, "message", chatHistory[key].name+": "+chatHistory[key].message);
@@ -51,8 +51,16 @@ Server.onMessage = function(client, key, payload) {
 	if(key == "message") {
 		pushChatHistory({name: client.player.name, message: payload});
 		Server.broadcast("message", client.player.name+": "+payload);
-	} else if(key == "Player") {
+	} else if(key == "Player" && client.player.id == payload.id) {
 		client.player.name = payload.name;
+		client.player.pos = payload.pos;
+		client.player.color = payload.color;
+
+		var list = [];
+		for(key in Server.clients) {
+			list.push(Server.clients[key].player);
+		}
+		Server.broadcast("PlayerList", list);
 	}
 }
 

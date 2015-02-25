@@ -90,9 +90,9 @@ var connectToServer = function(serverInfo) {
 
 	server = new WebSocket("ws://"+serverInfo.serverString());
 	server.onopen = function () {
+		disconnectFromGateKeeper();
 		console.log("Connection to server opened");
 
-		disconnectFromGateKeeper();
 		
 		server.connected = true;
 	}
@@ -112,6 +112,7 @@ var connectToServer = function(serverInfo) {
 		var exc = ServerExchange.import(event.data);
 
 		if(exc.key == "joined") {
+			console.log("joined!");
 			connectUI();
 		} else if(exc.key == "message") {
 			newMessage(exc.payload);
