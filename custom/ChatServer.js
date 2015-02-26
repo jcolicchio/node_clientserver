@@ -102,3 +102,5 @@ Server.onError = function(client, error) {
 	// just log it lol
 	console.log("error! "+error);
 }
+
+Server.connect();

@@ -3,16 +3,25 @@
 var ServerExchange = this['ServerExchange'];
 var ServerInfo = this['ServerInfo'];
 
+// data
 var server;
 var me;
 var players;
 
+// ui elements
+var serverList;
 var clientContent;
 var serverStatus;
 var canvas;
 var ctx;
 
 var initUI = function() {
+
+	if(serverList) {
+		serverList.remove();
+		serverList = null;
+	}
+
 	clientContent = $("<div id='clientcontent'></div>");
 	$('body').append(clientContent);
 
@@ -94,26 +103,14 @@ var renderCanvas = function() {
 	}
 }
 
-//jquery stuff for setting up the page, most of this code is
-$(document).ready(function(){
-
-	// This is a connection to the GateKeeper
-	// The argument is a callback for connecting to our own server, given one of our serverinfo objects
-	connectToGateKeeper(connectToServer, "Game");
-
-});
-
-var server;
-
-// custom stuff specific to our game server itself
-// note: we'll receive a ServerInfo object from GateKeeperClient.js
-var connectToServer = function(serverInfo) {
-
+gk = GateKeeperClient();
+gk.typeFilter = "Game";
+gk.connectToServer = function(serverInfo) {
 	initUI();
 
 	server = new WebSocket("ws://"+serverInfo.serverString());
 	server.onopen = function () {
-		disconnectFromGateKeeper();
+		gk.disconnect();
 		console.log("Connection to server opened");
 
 		
@@ -126,7 +123,7 @@ var connectToServer = function(serverInfo) {
 		disconnectUI();
 
 		// we disconnected from game, connect to GK again!
-		connectToGateKeeper(connectToServer, "Game");
+		gk.connect();
 	}
 	server.onerror = function () {
 		console.error("Connection error");
@@ -156,5 +153,24 @@ var connectToServer = function(serverInfo) {
 		}
 	}
 }
+
+gk.onServerListReceived = function(servers) {
+	// if we already had a server list, remove the old one
+	if(serverList) {
+		serverList.remove();
+		serverList = null;
+	}
+
+	// set our server list to the new one, and add it to body
+	serverList = gk.generateServerListElements(servers);
+
+	// add the new one
+	$('body').append(serverList);
+}
+
+//jquery stuff for setting up the page, most of this code is
+$(document).ready(function(){
+	gk.connect();
+});
 
 

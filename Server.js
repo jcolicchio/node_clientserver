@@ -83,6 +83,8 @@ module.exports = function(name, type, host, port, capacity, password) {
 
 		clients: [], // clients is a list of all authenticated clients
 
+		// TODO: consider renaming onClientConnect
+		// or server.client.onConnect, etc
 		onConnect: null,
 		onDisconnect: null,
 		onMessage: null,
@@ -119,84 +121,90 @@ module.exports = function(name, type, host, port, capacity, password) {
 			},
 			gateKeeper: null,
 			clientSocket: null
+		},
+
+		connect: function(){
+
+			// set up gatekeeper communication
+			server.private.gateKeeper = io.connect('http://'+host);
+			server.private.gateKeeper.on('connect', function () {
+				// as a server, when we connect to gatekeeper, we should inform him of our info
+				// he'll ask anyway though, so let's leave this for now
+			});
+			server.private.gateKeeper.on('disconnect', function () {
+				// connection to the server went down
+				// TODO: alert current players, and try to re-connect?
+				if(server.onError) {
+					server.onError(null, "Server disconnected from GateKeeper");
+				}
+			});
+			server.private.gateKeeper.on('message', function (event) {
+				var exc = ServerExchange.import(event);
+				if(exc.key == "ServerInfo") {
+					server.sendUpdatedInfo();
+				} else {
+					console.log("unknown message type: "+exc.key+" sent to server from gatekeeper: "+JSON.stringify(exc.payload));
+				}
+			});
+			this.private.gateKeeper.connect();
+
+			// set up client socket stuff
+			server.private.clientSocket = ws.createServer({port:port}, function (connection) {
+
+				server.private.connections.push(connection);
+				connection.authenticated = false;
+
+				if(password) {
+					server.send(connection, "password", null);
+				} else {
+					server.private.clientAuthenticated(connection);
+				}
+
+				connection.onmessage = function(event) {
+					// TODO: try catch! User might try to break the server
+
+					// TODO: probably strip out any user text that has HTML or stuff?
+					// or should we just leave that to the custom implementation
+					
+					var exc = ServerExchange.import(event.data);
+
+					if(!connection.authenticated && exc.key == "password") {
+						if(exc.payload == password) {
+							// oauth here?
+							server.private.clientAuthenticated(connection);
+						} else {
+							server.send(connection, "password", null);
+						}
+					} else if(connection.authenticated && server.onMessage) {
+						server.onMessage(connection, exc.key, exc.payload);
+					}
+
+				};
+
+				connection.onclose = function() {
+					//the client left the game server
+					server.private.connections.splice(server.private.connections.indexOf(connection), 1);
+					server.clients.splice(server.clients.indexOf(connection), 1);
+
+					// remember to tell gatekeeper your stats changed
+					server.sendUpdatedInfo();
+
+					if(server.onDisconnect && connection.authenticated) {
+						server.onDisconnect(connection);
+					}
+				};
+
+				connection.onerror = function() {
+					console.log("error occurred!");
+					if(server.onError) {
+						server.onError(connection, "connection error, no info given");
+					}
+				}
+			});
 		}
 	};
 
-	server.private.gateKeeper = io.connect('http://'+host);
-	server.private.gateKeeper.on('connect', function () {
-		// as a server, when we connect to gatekeeper, we should inform him of our info
-		// he'll ask anyway though, so let's leave this for now
-	});
-	server.private.gateKeeper.on('disconnect', function () {
-		// connection to the server went down
-		// TODO: alert current players, and try to re-connect?
-		if(server.onError) {
-			server.onError(null, "Server disconnected from GateKeeper");
-		}
-	});
-	server.private.gateKeeper.on('message', function (event) {
-		var exc = ServerExchange.import(event);
-		if(exc.key == "ServerInfo") {
-			server.sendUpdatedInfo();
-		} else {
-			console.log("unknown message type: "+exc.key+" sent to server from gatekeeper: "+JSON.stringify(exc.payload));
-		}
-	});
-	server.private.gateKeeper.connect();
-
-
-	server.private.clientSocket = ws.createServer({port:port}, function (connection) {
-
-		server.private.connections.push(connection);
-		connection.authenticated = false;
-
-		if(password) {
-			server.send(connection, "password", null);
-		} else {
-			server.private.clientAuthenticated(connection);
-		}
-
-		connection.onmessage = function(event) {
-			// TODO: try catch! User might try to break the server
-
-			// TODO: probably strip out any user text that has HTML or stuff?
-			// or should we just leave that to the custom implementation
-			
-			var exc = ServerExchange.import(event.data);
-
-			if(!connection.authenticated && exc.key == "password") {
-				if(exc.payload == password) {
-					// oauth here?
-					server.private.clientAuthenticated(connection);
-				} else {
-					server.send(connection, "password", null);
-				}
-			} else if(connection.authenticated && server.onMessage) {
-				server.onMessage(connection, exc.key, exc.payload);
-			}
-
-		};
-
-		connection.onclose = function() {
-			//the client left the game server
-			server.private.connections.splice(server.private.connections.indexOf(connection), 1);
-			server.clients.splice(server.clients.indexOf(connection), 1);
-
-			// remember to tell gatekeeper your stats changed
-			server.sendUpdatedInfo();
-
-			if(server.onDisconnect && connection.authenticated) {
-				server.onDisconnect(connection);
-			}
-		};
-
-		connection.onerror = function() {
-			console.log("error occurred!");
-			if(server.onError) {
-				server.onError(connection, "connection error, no info given");
-			}
-		}
-	});
+	
 
 	return server;
 }

@@ -19,84 +19,83 @@ var GateKeeperInfo = this['GateKeeperInfo'];
 var ServerInfo = this['ServerInfo'];
 var ServerExchange = this['ServerExchange'];
 
-var gateKeeper;
-var connectionFunction = null;
-var servers = [];
-
-var connectToGateKeeper = function(connectionFunction, type){
-
-	gateKeeper = new WebSocket("ws://"+window.location.hostname+":"+GateKeeperInfo.clientPort);
-	gateKeeper.onopen = function () {
-		console.log("Connection to GK opened");
-		
-		gateKeeper.connected = true;
-	}
-	gateKeeper.onclose = function () {
-		console.log("Connection to GK closed");
-		gateKeeper.connected = false;
-
-		//gateKeeper = null;
-	}
-	gateKeeper.onerror = function () {
-		console.error("Connection error");
-	}
-	gateKeeper.onmessage = function (event) {
-
-		// since GateKeeperInfo registered the proper classes for communicating with gatekeeper,
-		// this call to import will produce a proper list of ServerInfo smart objects
-		// or a proper ServerInfo smart object, or whatever else we told it to be able to re-initialize
-		var exc = ServerExchange.import(event.data);
-
-		//if the key is ServerList, expect a list of ServerInfo objects
-		if(exc.key == "ServerList") {
-			updateServerList(exc.payload, type);
-		} else {
-			console.log("unknown key "+exc.key+" sent from GateKeeper to client");
-		}
-	}
-
-	gateKeeper.connectionFunction = connectionFunction;
-
-
-	// UI stuff
-	var serverList = $("<div id='serverlist'></div>");
-	$('body').append(serverList);
-
-	var updateServerList = function(serverItems, type) {
-		servers = serverItems;
-
-		var refresh = $("<input class='refresh' type='submit' value='Refresh' />");
-		refresh.on('click', function(e) {
-			gateKeeper.send(JSON.stringify(ServerExchange.new("ServerList", null)));
-		});
-
-		$('#serverlist').empty().append("Servers: ").append(refresh).append("<br/>");
-		// for each item, put it in the serverlist
-		for(key in serverItems) {
-			if(!type || serverItems[key].type == type) {
-				var s = serverItems[key];
-				var button = $("<input type='submit' value='Join' class='join' />");
-				button.data("ip", s.ip);
-				button.data("port", s.port);
-				button.data("info", s);
-
-				button.on('click', function(e) {
-					var server = $(this).data("ip")+":"+$(this).data("port");
-					gateKeeper.connectionFunction($(this).data("info"));
-				});
-
-				$('#serverlist').append(s.name+": "+s.ip+":"+s.port+", "+s.players+"/"+s.capacity+" ").append(button).append("<br/>");
+var GateKeeperClient = function() {
+	var gk = {
+		servers: [],
+		onServerListReceived: null, // method accepting a list of servers,
+		connectToServer: null, // method called when you click a server with the UI
+		typeFilter: null,
+		connected: false,
+		// TODO: some sort of flag that says "yes, automatically update me as new servers update/roll in"
+		private: {
+			socket: null
+		},
+		connect: function() {
+			this.private.socket = new WebSocket("ws://"+window.location.hostname+":"+GateKeeperInfo.clientPort);
+			this.private.socket.onopen = function() {
+				console.log("Connection to GK opened");
+				gk.connected = true;
 			}
+			this.private.socket.onclose = function() {
+				console.log("Connection to GK closed");
+				gk.connected = false;
+			}
+			this.private.socket.onerror = function() {
+				console.error("Connection error");
+			}
+			this.private.socket.onmessage = function(event) {
+				var exc = ServerExchange.import(event.data);
+
+				if(exc.key == "ServerList") {
+					gk.servers = exc.payload;
+					if(gk.onServerListReceived) {
+						gk.onServerListReceived(gk.servers);
+					}
+				} else {
+					console.log("unknown key "+exc.key+" sent from GateKeeper to client");
+				}
+			}
+		},
+		disconnect: function() {
+			// disconnect from the socket
+			this.private.socket.close();
+		},
+		generateServerListElements: function(serverItems) {
+			var serverList = $("<div id='serverlist'></div>");
+
+			var refresh = $("<input class='refresh' type='submit' value='Refresh' />");
+			refresh.on('click', function(e) {
+				gk.send(JSON.stringify(ServerExchange.new("ServerList", null)));
+				// TODO: disable the refresh, and continually update some UI element or give callbacks or something
+				// when we receive a "done refreshing", consider re-enabling?
+				// this is all getting into non-standard territory
+				// TODO: figure out some kind of way a server can get a stream of live servers like how TF2 do
+				// and if we could define some kind of callback a player can set
+				// or better yet, have serverList update itself as servers show up, that'd be sweet
+			});
+
+			serverList.append("Servers: ").append(refresh).append("<br/>");
+
+			for(key in serverItems) {
+				if(!gk.typeFilter || serverItems[key].type == gk.typeFilter) {
+					var s = serverItems[key];
+					var button = $("<input type='submit' value='Join' class='join' />");
+					button.data("info", s);
+
+					button.on('click', function(e) {
+						if(gk.connectToServer) {
+							gk.connectToServer($(this).data("info"));
+						}
+					});
+
+					serverList.append(s.name+": "+s.ip+":"+s.port+", "+s.players+"/"+s.capacity+" ").append(button).append("<br/>");
+				}
+			}
+
+			return serverList;
 		}
 	}
+
+	return gk;
 }
 
-
-// TODO: figure out if it's worth it to have client disconnect from GK when in game
-// probably is, don't want anyone in GK unless they're looking for a game, right?
-var disconnectFromGateKeeper = function() {
-	if(gateKeeper) {
-		gateKeeper.close();
-		$('#serverlist').remove();
-	}
-}

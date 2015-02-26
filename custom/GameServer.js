@@ -62,3 +62,5 @@ Server.onError = function(client, error) {
 	// just console log it
 	console.log("error! "+error);
 }
+
+Server.connect();

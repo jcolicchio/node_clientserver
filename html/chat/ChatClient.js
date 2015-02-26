@@ -3,14 +3,23 @@
 var ServerExchange = this['ServerExchange'];
 var ServerInfo = this['ServerInfo'];
 
+// data
 var server;
 var me;
 
+// ui elements
+var serverList;
 var clientContent;
 var serverStatus;
 var messages;
 
+
 var initUI = function() {
+
+	if(serverList) {
+		serverList.remove();
+		serverList = null;
+	}
 	clientContent = $("<div id='clientcontent'></div>");
 	$('body').append(clientContent);
 
@@ -73,44 +82,34 @@ var newMessage = function(message) {
 	}
 }
 
-//jquery stuff for setting up the page, most of this code is
-$(document).ready(function(){
 
-	// This is a connection to the GateKeeper
-	// The argument is a callback for connecting to our own server, given one of our serverinfo objects
-	connectToGateKeeper(connectToServer, "Chat");
 
-});
+var gk = GateKeeperClient();
 
-var server;
+gk.typeFilter = "Chat";
 
-// custom stuff specific to our game server itself
-// note: we'll receive a ServerInfo object from GateKeeperClient.js
-var connectToServer = function(serverInfo) {
-
+gk.connectToServer = function(serverInfo) {
 	initUI();
 
 	server = new WebSocket("ws://"+serverInfo.serverString());
-	server.onopen = function () {
-		disconnectFromGateKeeper();
-		console.log("Connection to server opened");
-
-		
+	server.onopen = function() {
+		// this stuff should happen automatically, every client shouldn't worry about switching contexts
+		gk.disconnect();
 		server.connected = true;
+		console.log("Connection to server opened");
 	}
-	server.onclose = function () {
-		console.log("Connection to server closed");
+	server.onclose = function() {
+		// again, this stuff should happen automatically
 		server.connected = false;
-
 		disconnectUI();
-
 		// we disconnected from game, connect to GK again!
-		connectToGateKeeper(connectToServer, "Chat");
+		gk.connect();
+		console.log("Connection to server closed");
 	}
-	server.onerror = function () {
+	server.onerror = function() {
 		console.error("Connection error");
 	}
-	server.onmessage = function (event) {
+	server.onmessage = function(event) {
 		var exc = ServerExchange.import(event.data);
 
 		if(exc.key == "joined") {
@@ -126,7 +125,6 @@ var connectToServer = function(serverInfo) {
 			// if the server sends a lone player, it's me
 			me = exc.payload;
 		} else if(exc.key == "PlayerList") {
-			console.log(exc.payload);
 			players = exc.payload;
 		} else {
 			console.log("server sent client unknown key: "+exc.key+" with payload: "+exc.payload);
@@ -134,4 +132,21 @@ var connectToServer = function(serverInfo) {
 	}
 }
 
+gk.onServerListReceived = function(servers) {
 
+	// if we already had a server list, remove the old one
+	if(serverList) {
+		serverList.remove();
+		serverList = null;
+	}
+
+	// set our server list to the new one, and add it to body
+	serverList = gk.generateServerListElements(servers);
+
+	// add the new one
+	$('body').append(serverList);
+}
+
+$(document).ready(function(){
+	gk.connect();
+});
