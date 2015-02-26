@@ -23,30 +23,6 @@ var gateKeeper;
 var connectionFunction = null;
 var servers = [];
 
-$(document).ready(function() {
-
-	$('body').on('click', '.refresh', function(e){
-		//ask the gatekeeper connection to refresh
-		gateKeeper.send(JSON.stringify(ServerExchange.new("ServerList", null)));
-	});
-
-	$('body').on('click', '.join', function(e){
-		// e is what we clicked on i guess?
-		var server = $(this).data("ip")+":"+$(this).data("port");
-		//make connection connect to it!
-		gateKeeper.connectionFunction($(this).data("info"));
-		
-		// disconnect from gatekeeper?
-		// maybe once the user connects to server...
-		// TODO: when a user connects to server, have server tell GK to disconnect them
-		// this would of course happen once the server is done verifying with GK that the player is legit
-		// either way, politely leave client-side, but force a disconnect serverside?
-		// is there even a point to that? they could just connect again?
-		// then let's say, if they connect again and auth, drop them from all clients they may be connected to?
-		// this is a future:oauth problem
-	});
-});
-
 var connectToGateKeeper = function(connectionFunction, type){
 
 	gateKeeper = new WebSocket("ws://"+window.location.hostname+":"+GateKeeperInfo.clientPort);
@@ -88,7 +64,13 @@ var connectToGateKeeper = function(connectionFunction, type){
 
 	var updateServerList = function(serverItems, type) {
 		servers = serverItems;
-		$('#serverlist').empty().append("Servers: <input class='refresh' type='submit' value='Refresh' /><br/>");
+
+		var refresh = $("<input class='refresh' type='submit' value='Refresh' />");
+		refresh.on('click', function(e) {
+			gateKeeper.send(JSON.stringify(ServerExchange.new("ServerList", null)));
+		});
+
+		$('#serverlist').empty().append("Servers: ").append(refresh).append("<br/>");
 		// for each item, put it in the serverlist
 		for(key in serverItems) {
 			if(!type || serverItems[key].type == type) {
@@ -97,6 +79,11 @@ var connectToGateKeeper = function(connectionFunction, type){
 				button.data("ip", s.ip);
 				button.data("port", s.port);
 				button.data("info", s);
+
+				button.on('click', function(e) {
+					var server = $(this).data("ip")+":"+$(this).data("port");
+					gateKeeper.connectionFunction($(this).data("info"));
+				});
 
 				$('#serverlist').append(s.name+": "+s.ip+":"+s.port+", "+s.players+"/"+s.capacity+" ").append(button).append("<br/>");
 			}
