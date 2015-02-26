@@ -1,5 +1,5 @@
 // require Server.js, create with null name, "Game" type, ignore the rest of the params, use default
-var Server = require('../Server.js')(null, "Dicewars");
+var Server = require('../Server.js')({type: "Dicewars"});
 
 // require Player.js on the server side, this smart object is passed back and forth between client and server
 var Player = require('../html/custom/game/Player.js');

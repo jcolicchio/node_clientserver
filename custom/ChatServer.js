@@ -2,7 +2,7 @@
 // TODO: consider an object with keys as a single argument
 
 // require Server.js with default name, Chat type, default other properties
-var Server = require('../Server.js')(null, "Chat");
+var Server = require('../Server.js')({type: "Chat"});
 
 // Player is the object being sent back and forth
 var Player = require('../html/custom/chat/Player.js');
