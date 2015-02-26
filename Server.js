@@ -36,50 +36,51 @@ var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
 var ServerInfo = require('./html/server/ServerInfo.js');
 var ServerSettings = require('./ServerSettings.js');
 
-module.exports = function(name, type, host, port, capacity, password) {
+module.exports = function(options) {
+	// name, type, host, port, capacity, password
 
-	if(!name) {
-		name = ServerSettings.defaults.name;
+	if(!options.name) {
+		options.name = ServerSettings.defaults.name;
 	}
-	if(!type) {
-		type = ServerSettings.defaults.type;
+	if(!options.type) {
+		options.type = ServerSettings.defaults.type;
 	}
-	if(!host) {
-		host = ServerSettings.defaults.host;
+	if(!options.host) {
+		options.host = ServerSettings.defaults.host;
 	}
-	if(!port) {
-		port = ServerSettings.defaults.port;
+	if(!options.port) {
+		options.port = ServerSettings.defaults.port;
 	}
-	if(!capacity) {
-		capacity = ServerSettings.defaults.capacity;
+	if(!options.capacity) {
+		options.capacity = ServerSettings.defaults.capacity;
 	}
-	if(!password) {
-		password = ServerSettings.defaults.password;
+	if(!options.password) {
+		options.password = ServerSettings.defaults.password;
 	}
 
 	for(var i=3;i<process.argv.length;i+=2) {
 		var key = process.argv[i-1];
 		var value = process.argv[i];
 		if(key == "-n") {
-			name = value;
+			options.name = value;
 		} else if(key == "-g") {
-			host = value
+			options.host = value
 		} else if(key == "-p") {
-			port = value;
+			options.port = value;
 		} else if(key == "-s") {
-			password = value;
+			options.password = value;
 		}
 	}
 
 	// TODO: verify port is numeric, or crash
 
 	var server = {
-		name: name,
-		type: type,
-		host: host,
-		port: port,
-		capacity: capacity,
-		password: password,
+		name: options.name,
+		type: options.type,
+		host: options.host,
+		port: options.port,
+		capacity: options.capacity,
+		password: options.password,
 
 		clients: [], // clients is a list of all authenticated clients
 
@@ -126,7 +127,7 @@ module.exports = function(name, type, host, port, capacity, password) {
 		connect: function(){
 
 			// set up gatekeeper communication
-			server.private.gateKeeper = io.connect('http://'+host);
+			server.private.gateKeeper = io.connect('http://'+this.host);
 			server.private.gateKeeper.on('connect', function () {
 				// as a server, when we connect to gatekeeper, we should inform him of our info
 				// he'll ask anyway though, so let's leave this for now
@@ -149,12 +150,12 @@ module.exports = function(name, type, host, port, capacity, password) {
 			this.private.gateKeeper.connect();
 
 			// set up client socket stuff
-			server.private.clientSocket = ws.createServer({port:port}, function (connection) {
+			server.private.clientSocket = ws.createServer({port:options.port}, function (connection) {
 
 				server.private.connections.push(connection);
 				connection.authenticated = false;
 
-				if(password) {
+				if(options.password) {
 					server.send(connection, "password", null);
 				} else {
 					server.private.clientAuthenticated(connection);
@@ -169,7 +170,7 @@ module.exports = function(name, type, host, port, capacity, password) {
 					var exc = ServerExchange.import(event.data);
 
 					if(!connection.authenticated && exc.key == "password") {
-						if(exc.payload == password) {
+						if(exc.payload == options.password) {
 							// oauth here?
 							server.private.clientAuthenticated(connection);
 						} else {
