@@ -2,7 +2,7 @@
 
 	var ServerExchange = this['ServerExchange'];
 	if(ServerExchange === undefined) {
-		ServerExchange = require('../server/ServerExchange.js');	
+		ServerExchange = require('../../server/ServerExchange.js');	
 	}
 
 	Player = {};

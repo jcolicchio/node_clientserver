@@ -5,7 +5,7 @@
 var Server = require('../Server.js')(null, "Chat");
 
 // Player is the object being sent back and forth
-var Player = require('../html/chat/Player.js');
+var Player = require('../html/custom/chat/Player.js');
 
 // iterate playerId as new players are created
 // i suppose this could go in the Player class/constructor?
