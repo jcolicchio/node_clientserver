@@ -27,10 +27,8 @@ var pushChatHistory = function(entry) {
 }
 
 Server.onConnect = function(client) {
-	// this callback occurs when the server verifies the client is legit
-	// tell the client they authenticated successfully
-	Server.send(client, "joined", null);
-
+	// TODO: keep in mind the server will in all likelihood be talking to the GateKeeperClient proxy first
+	
 	// create a new player, assign it to the client
 	// this will last for the duration of the connection
 	var player = Player.new(++playerId, "Anon"+playerId);

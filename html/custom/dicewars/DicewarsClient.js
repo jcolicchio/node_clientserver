@@ -2,6 +2,7 @@
 
 var ServerExchange = this['ServerExchange'];
 var ServerInfo = this['ServerInfo'];
+var Board = this['Board'];
 
 // data
 var server;
@@ -40,7 +41,7 @@ var connectUI = function() {
 		server.close();
 	});
 
-	canvas = $("<canvas id='canvas' width=400 height=400></canvas>");
+	/*canvas = $("<canvas id='canvas' width=400 height=400></canvas>");
 	clientContent.append(canvas);
 	ctx = canvas[0].getContext("2d");
 
@@ -68,7 +69,10 @@ var connectUI = function() {
 			// send to server!
 			server.send(JSON.stringify(ServerExchange.new("Player", me)));
 		}
-	});
+	});*/
+
+	var board = Board.new(6, 6, null, 2, 0).init();
+	clientContent.append(generateBoardUI(board));
 }
 
 var disconnectUI = function() {
@@ -101,6 +105,79 @@ var renderCanvas = function() {
 			ctx.fillRect(player.pos.x-size/2, player.pos.y-size/2, size, size);
 		}
 	}
+}
+
+var source = null;
+var result = null;
+
+var generateBoardUI = function(board) {
+	var colors = ['red', 'yellow', 'pink', 'green', 'blue', 'purple', 'cyan', 'orange'];
+
+	var ret = $("<div class='board'></div>");
+	for(var i=0;i<board.height;i++) {
+		var row = $("<div class='row'></div>");
+		for(var j=0;j<board.width;j++) {
+			var cell = $("<div class='cell'></div>");
+			var color = colors[board.data[i][j].team];
+			cell.addClass(color);
+			cell.append(board.data[i][j].count);
+			row.append(cell);
+			cell.data("team", board.data[i][j].team);
+			cell.data("count", board.data[i][j].count);
+			cell.data("x", j);
+			cell.data("y", i);
+			cell.on('click', function() {
+				if(source) {
+					$('#selected').attr('id', null);
+					var dest = {
+						x: $(this).data("x"),
+						y: $(this).data("y")
+					}
+					var command = Command.new(source, dest, false);
+					source = null;
+					var outcome = board.applyCommand(command);
+					if(outcome) {
+						ret.remove();
+						$('body').append(generateBoardUI(board));
+						if(result) {
+							result.remove();
+						}
+						result = $("<div class='result'></div>");
+						result.append("attack: "+outcome.attack+", defense: "+outcome.defense);
+						$('body').append(result);
+						if(board.winner() >= 0) {
+							// current player won, no doubt
+							$('body').append("<div class='winner'>Player "+board.turn+" wins!</div>");
+						}
+					}
+				} else {
+					if($(this).data("team") == board.turn) {
+						$(this).attr('id', 'selected');
+						source = {
+							x: $(this).data("x"),
+							y: $(this).data("y")
+						}
+					}
+				}
+			});
+		}
+		ret.append(row);
+	}
+	var endTurn = $("<input type='submit' value='End Turn' />");
+	endTurn.on('click', function() {
+		//submit to board, and if true, regen board
+		var command = Command.new(null, null, true);
+		if(board.applyCommand(command)) {
+			ret.remove();
+			source = null;
+			if(result) {
+				result.remove();
+			}
+			$('body').append(generateBoardUI(board));
+		}
+	});
+	ret.append("<br/>").append(endTurn);
+	return ret;
 }
 
 gk = GateKeeperClient();

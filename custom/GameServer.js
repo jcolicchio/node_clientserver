@@ -8,9 +8,6 @@ var Player = require('../html/custom/game/Player.js');
 var playerId = 0;
 
 Server.onConnect = function(client) {
-	// when the client connects AND authenticates, send the client a "joined message"
-	// this is arbitrary, we use this as client to verify the authentication went through
-	Server.send(client, "joined", null);
 
 	// create a new player and assign it to the client, this is persistent for the duration of the connection
 	var player = Player.new(++playerId, "Anon"+playerId, {x: 20, y: 20}, "red");

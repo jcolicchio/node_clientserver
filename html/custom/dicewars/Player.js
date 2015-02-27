@@ -20,7 +20,7 @@
 		return player;
 	}
 	Player.copy = function(p) {
-		if(p === null) {
+		if(!p) {
 			return null;
 		}
 		return Player.new(p.id, p.name, p.pos, p.color);

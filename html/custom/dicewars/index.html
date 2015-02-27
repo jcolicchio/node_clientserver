@@ -10,8 +10,40 @@
 		<script type="text/javascript" src="../../client/GateKeeperClient.js"></script>
 		
 		<script type="text/javascript" src="./Player.js"></script>
+		<script type="text/javascript" src="./Command.js"></script>
+		<script type="text/javascript" src="./Board.js"></script>
 
 		<script type="text/javascript" src="./DicewarsClient.js"></script>
+
+		<style>
+			#selected {
+				position: relative;
+			}
+			#selected:after {
+				display: block;
+				content: '';
+				position: absolute;
+				top: 0;
+				left: 0;
+				bottom: 0;
+				right: 0;
+				background: rgba(255,255,255,0.7);
+			}
+			.cell {
+				width: 50px;
+				height: 50px;
+				display: inline-block;
+			}
+			.cell.red { background-color: red; }
+			.cell.yellow { background-color: yellow; }
+			.cell.pink { background-color: pink; }
+			.cell.green { background-color: green; }
+			.cell.blue { background-color: blue; }
+			.cell.purple { background-color: purple; }
+			.cell.cyan { background-color: cyan; }
+			.cell.orange { background-color: orange; }
+
+		</style>
 	</head>
 	<body>
 		/ <a href='../chat'>Chat</a> / <a href='../game'>Game</a> / <a href='../dicewars'>Dicewars</a> /

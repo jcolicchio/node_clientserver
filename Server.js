@@ -113,6 +113,9 @@ module.exports = function(options) {
 			clientAuthenticated: function(connection) {
 				// TODO: oauth stuff?
 				connection.authenticated = true;
+				
+				server.send(connection, "auth", "this is an auth confirmation");
+
 				server.clients.push(connection);
 				server.sendUpdatedInfo();
 
