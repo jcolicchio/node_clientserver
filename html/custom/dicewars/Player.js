@@ -6,12 +6,11 @@
 	}
 
 	Player = {};
-	Player.new = function(id, name, pos, color) {
+	Player.new = function(id, name, team) {
 		var player = {
 			id: id,
 			name: name,
-			pos: pos,
-			color: color,
+			team: team,
 			equal: function(player) {
 				return this.id == player.id && this.name == player.name;
 			}
@@ -23,7 +22,7 @@
 		if(!p) {
 			return null;
 		}
-		return Player.new(p.id, p.name, p.pos, p.color);
+		return Player.new(p.id, p.name, p.team);
 	}
 	Player.import = function(json) {
 		return Player.copy(JSON.parse(json));

@@ -6,6 +6,7 @@
 var ServerExchange = this['ServerExchange'];
 var ServerInfo = this['ServerInfo'];
 var Board = this['Board'];
+var Player = this['Player'];
 
 // data
 var me;
@@ -17,6 +18,8 @@ var clientContent;
 var canvas;
 var ctx;
 
+var identityElement;
+
 
 var connectUI = function() {
 	clientContent = $("<div id='clientcontent'></div>");
@@ -27,6 +30,9 @@ var connectUI = function() {
 	disconnectButton.on("click", function(e) {
 		gk.server.close();
 	});
+
+	identityElement = $("<div id='identity'></div>");
+	clientContent.append(identityElement);
 }
 
 var disconnectUI = function() {
@@ -54,6 +60,12 @@ var renderCanvas = function() {
 			ctx.fillRect(player.pos.x-size/2, player.pos.y-size/2, size, size);
 		}
 	}
+}
+
+var updateIdentity = function(player) {
+	console.log(JSON.stringify(player)+", "+player.name);
+	me = player;
+	identityElement.empty().append(player.name+", team: "+player.team);
 }
 
 var source = null;
@@ -145,8 +157,7 @@ gk.server.onmessage = function (key, payload) {
 	
 	if(key == "Player") {
 		// if the server sends a lone player, it's me
-		me = payload;
-		$("input[name='color'][value='"+payload.color+"']").click();
+		updateIdentity(payload);
 	} else if(key == "PlayerList") {
 		players = payload;
 
@@ -158,9 +169,16 @@ gk.server.onmessage = function (key, payload) {
 		if(boardElement) {
 			boardElement.remove();
 		}
-		boardElement = generateBoardUI(board);
-		clientContent.append(boardElement);
+		if(board) {
+			boardElement = generateBoardUI(board);
+			clientContent.append(boardElement);
+		} else {
+			boardElement = null;
+		}
 
+	} else if(key == "Command") {
+		// server told us an event happened!
+		console.log("current player attacked "+JSON.stringify(payload.dest)+" with "+payload.result.attack+", defender had "+payload.result.defense);
 	} else {
 		console.log("server sent client unknown key: "+key+" with payload: "+payload);
 	}

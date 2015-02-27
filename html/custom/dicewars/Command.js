@@ -6,11 +6,12 @@
 	}
 
 	Command = {};
-	Command.new = function(source, dest, endTurn) {
+	Command.new = function(source, dest, endTurn, result) {
 		var command = {
 			source: source,
 			dest: dest,
-			endTurn: endTurn
+			endTurn: endTurn,
+			result: result
 		}
 
 		return command;
@@ -19,7 +20,7 @@
 		if(!c) {
 			return null;
 		}
-		return Command.new(c.source, c.dest, c.endTurn);
+		return Command.new(c.source, c.dest, c.endTurn, c.result);
 	}
 	Command.import = function(json) {
 		return Command.copy(JSON.parse(json));
@@ -36,4 +37,4 @@
 		return Command.copy(payload);
 	});
 
-})(typeof exports === 'undefined'? this['Player']={}: exports);
+})(typeof exports === 'undefined'? this['Command']={}: exports);

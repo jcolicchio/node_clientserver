@@ -19,7 +19,12 @@ var broadcastPlayers = function() {
 	// generate a list of players for each client
 	var list = [];
 	for(key in Server.clients) {
-		list.push(Server.clients[key].player);
+		var player = Server.clients[key].player;
+		list.push(player);
+		if(player.team != gamePlayers.indexOf(player)) {
+			player.team = gamePlayers.indexOf(player);
+			Server.send(Server.clients[key], "Player", player);
+		}
 	}
 
 	// send everyone the player list, with each player's position and color being up to date
@@ -34,15 +39,14 @@ Server.onConnect = function(client) {
 	
 	// send the client itself so it knows its id, name
 	Server.send(client, "Player", player);
-
-
-	broadcastPlayers();
+	console.log("sent "+JSON.stringify(player));
 
 	if(gameStarted) {
 		Server.send(client, "Board", board);
 	} else {
 		if(gamePlayers.length < teams) {
 			gamePlayers.push(player);
+
 			if(gamePlayers.length == teams) {
 				gameStarted = true;
 				board = Board.new(boardWidth, boardHeight, null, teams, 0).init();
@@ -50,6 +54,8 @@ Server.onConnect = function(client) {
 			}
 		}
 	}
+
+	broadcastPlayers();
 }
 
 Server.onDisconnect = function(client) {
@@ -57,7 +63,6 @@ Server.onDisconnect = function(client) {
 	// update everyone with a new list of players, the client has already been removed and won't be updated
 	// but if we wanted the player which was removed, we could grab it with client.player one last time
 	// say, for a death animation or something, idk
-	broadcastPlayers();
 
 	if(gamePlayers.indexOf(client.player) >= 0) {
 		gamePlayers.splice(gamePlayers.indexOf(client.player), 1);
@@ -73,8 +78,12 @@ Server.onDisconnect = function(client) {
 			}
 		} else {
 			gameStarted = false;
+			board = null;
+			Server.broadcast("Board", board);
 		}
 	}
+
+	broadcastPlayers();
 }
 
 Server.onMessage = function(client, key, payload) {
@@ -90,8 +99,11 @@ Server.onMessage = function(client, key, payload) {
 	} else if(key == "Command") {
 		// received a command from a player
 		if(gameStarted && gamePlayers.indexOf(client.player) == board.turn) {
-			if(board.applyCommand(payload)) {
+			var result = board.applyCommand(payload);
+			if(result) {
+				payload.result = result;
 				Server.broadcast("Board", board);
+				Server.broadcast("Command", payload);
 			}
 		}
 	}

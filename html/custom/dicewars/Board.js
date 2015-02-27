@@ -4,15 +4,20 @@
 	if(ServerExchange === undefined) {
 		ServerExchange = require('../../server/ServerExchange.js');	
 	}
+	var Player = this['Player'];
+	if(Player === undefined) {
+		Player = require('./Player.js');	
+	}
 
 	Board = {};
-	Board.new = function(width, height, data, teams, turn) {
+	Board.new = function(width, height, data, teams, turn, gamePlayers) {
 		var board = {
 			width: width,
 			height: height,
 			data: data,
 			teams: teams,
 			turn: turn,
+			gamePlayers: gamePlayers,
 			init: function() {
 				// this is a total rats nest
 
@@ -192,7 +197,11 @@
 		if(!b) {
 			return null;
 		}
-		return Board.new(b.width, b.height, b.data, b.teams, b.turn);
+		var gp = [];
+		for(key in b.gamePlayers) {
+			gp.push(Player.copy(b.gamePlayers[key]));
+		}
+		return Board.new(b.width, b.height, b.data, b.teams, b.turn, gp);
 	}
 	Board.import = function(json) {
 		return Board.copy(JSON.parse(json));
