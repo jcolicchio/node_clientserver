@@ -1,3 +1,6 @@
+// TODO: send results of attack
+// TODO: tell each player what color they are at the start
+
 // This is the client, should be pretty much custom code here
 
 var ServerExchange = this['ServerExchange'];
@@ -5,84 +8,30 @@ var ServerInfo = this['ServerInfo'];
 var Board = this['Board'];
 
 // data
-var server;
 var me;
 var players;
 
 // ui elements
-var serverList;
 var clientContent;
-var serverStatus;
+
 var canvas;
 var ctx;
 
-var initUI = function() {
 
-	if(serverList) {
-		serverList.remove();
-		serverList = null;
-	}
-
+var connectUI = function() {
 	clientContent = $("<div id='clientcontent'></div>");
 	$('body').append(clientContent);
 
-	serverStatus = $("<div id='serverstatus'></div>");
-	clientContent.append(serverStatus).append("<br/>");
-
-	setStatus("Connecting...");
-}
-
-var connectUI = function() {
-	setStatus("Connected! ");
-
 	var disconnectButton = $("<input type='submit' id='disconnect' value='Disconnect' />");
-	serverStatus.append(disconnectButton);
+	clientContent.append(disconnectButton);
 	disconnectButton.on("click", function(e) {
-		server.close();
+		gk.server.close();
 	});
-
-	/*canvas = $("<canvas id='canvas' width=400 height=400></canvas>");
-	clientContent.append(canvas);
-	ctx = canvas[0].getContext("2d");
-
-	canvas.on('mousemove', function(e) {
-		var rect = canvas[0].getBoundingClientRect();
-		me.pos.x = e.clientX - rect.left;
-		me.pos.y = e.clientY - rect.top;
-		server.send(JSON.stringify(ServerExchange.new("Player", me)));
-	});
-
-	ctx.fillStyle = "black";
-	ctx.fillRect(0, 0, 400, 400);
-
-	var colors = $("<form action=''></form>");
-	clientContent.append(colors);
-
-	var redColor = $("<input type='radio' name='color' value='red'>Red</input>");
-	var greenColor = $("<input type='radio' name='color' value='green'>Green</input>");
-	var blueColor = $("<input type='radio' name='color' value='blue'>Blue</input>");
-	colors.append(redColor).append(greenColor).append(blueColor);
-
-	$("input[name='color']").change(function() {
-		if(me.color != this.value) {
-			me.color = this.value;
-			// send to server!
-			server.send(JSON.stringify(ServerExchange.new("Player", me)));
-		}
-	});*/
-
-	var board = Board.new(6, 6, null, 2, 0).init();
-	clientContent.append(generateBoardUI(board));
 }
 
 var disconnectUI = function() {
 	clientContent.remove();
 }
-
-var setStatus = function(status) {
-	serverStatus.empty().append(status);
-}
-
 
 var renderCanvas = function() {
 	ctx.fillStyle = "black";
@@ -108,7 +57,9 @@ var renderCanvas = function() {
 }
 
 var source = null;
-var result = null;
+//var result = null;
+var board;
+var boardElement;
 
 var generateBoardUI = function(board) {
 	var colors = ['red', 'yellow', 'pink', 'green', 'blue', 'purple', 'cyan', 'orange'];
@@ -136,18 +87,15 @@ var generateBoardUI = function(board) {
 					var command = Command.new(source, dest, false);
 					source = null;
 					var outcome = board.applyCommand(command);
+					gk.server.send("Command", command);
 					if(outcome) {
-						ret.remove();
-						$('body').append(generateBoardUI(board));
-						if(result) {
-							result.remove();
-						}
-						result = $("<div class='result'></div>");
+						
+						var result = $("<div class='result'></div>");
 						result.append("attack: "+outcome.attack+", defense: "+outcome.defense);
-						$('body').append(result);
+						
 						if(board.winner() >= 0) {
 							// current player won, no doubt
-							$('body').append("<div class='winner'>Player "+board.turn+" wins!</div>");
+							boardElement.append("<div class='winner'>Player "+board.turn+" wins!</div>");
 						}
 					}
 				} else {
@@ -167,13 +115,11 @@ var generateBoardUI = function(board) {
 	endTurn.on('click', function() {
 		//submit to board, and if true, regen board
 		var command = Command.new(null, null, true);
+		gk.server.send("Command", command);
 		if(board.applyCommand(command)) {
-			ret.remove();
+			//ret.remove();
 			source = null;
-			if(result) {
-				result.remove();
-			}
-			$('body').append(generateBoardUI(board));
+			
 		}
 	});
 	ret.append("<br/>").append(endTurn);
@@ -181,68 +127,43 @@ var generateBoardUI = function(board) {
 }
 
 gk = GateKeeperClient();
+
 gk.typeFilter = "Dicewars";
-gk.connectToServer = function(serverInfo) {
-	initUI();
 
-	server = new WebSocket("ws://"+serverInfo.serverString());
-	server.onopen = function () {
-		gk.disconnect();
-		console.log("Connection to server opened");
-
-		
-		server.connected = true;
-	}
-	server.onclose = function () {
-		console.log("Connection to server closed");
-		server.connected = false;
-
-		disconnectUI();
-
-		// we disconnected from game, connect to GK again!
-		gk.connect();
-	}
-	server.onerror = function () {
-		console.error("Connection error");
-	}
-	server.onmessage = function (event) {
-		var exc = ServerExchange.import(event.data);
-
-		if(exc.key == "joined") {
-			console.log("joined!");
-			connectUI();
-		} else if(exc.key == "password") {
-			// the server has a password
-			var pw = prompt("Password?");
-			server.send(JSON.stringify(ServerExchange.new("password", pw)));
-		} else if(exc.key == "Player") {
-			// if the server sends a lone player, it's me
-			me = exc.payload;
-			$("input[name='color'][value='"+exc.payload.color+"']").click();
-		} else if(exc.key == "PlayerList") {
-			console.log(exc.payload);
-			players = exc.payload;
-
-			renderCanvas();
-
-		} else {
-			console.log("server sent client unknown key: "+exc.key+" with payload: "+exc.payload);
-		}
-	}
+gk.server.onopen = function () {
+	connectUI();
+	console.log("Connection to server opened");
 }
+gk.server.onclose = function () {
+	console.log("Connection to server closed");
+	disconnectUI();
+}
+gk.server.onerror = function () {
+	console.error("Connection error");
+}
+gk.server.onmessage = function (key, payload) {
+	
+	if(key == "Player") {
+		// if the server sends a lone player, it's me
+		me = payload;
+		$("input[name='color'][value='"+payload.color+"']").click();
+	} else if(key == "PlayerList") {
+		players = payload;
 
-gk.onServerListReceived = function(servers) {
-	// if we already had a server list, remove the old one
-	if(serverList) {
-		serverList.remove();
-		serverList = null;
+		//renderCanvas();
+
+	} else if(key == "Board") {
+		board = payload;
+
+		if(boardElement) {
+			boardElement.remove();
+		}
+		boardElement = generateBoardUI(board);
+		clientContent.append(boardElement);
+
+	} else {
+		console.log("server sent client unknown key: "+key+" with payload: "+payload);
 	}
-
-	// set our server list to the new one, and add it to body
-	serverList = gk.generateServerListElements(servers);
-
-	// add the new one
-	$('body').append(serverList);
 }
 
 //jquery stuff for setting up the page, most of this code is

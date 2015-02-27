@@ -82,6 +82,7 @@ Here's all the files you might find in a basic framework+simple app scenario. I 
 ##### /html/client/GateKeeperClient.js
 * **Boilerplate**
 * This is boilerplate code to connect to the GateKeeper, developers probably won't have to mess with this much
+* Usage of GateKeeperClient automatically adds/manages jQuery UI for displaying servers, with optional type filter
 
 ## /html/server
 * This is the directory for code that's shared between client and server
@@ -125,10 +126,6 @@ Here's all the files you might find in a basic framework+simple app scenario. I 
 * Heartbeat for each Server
  * Hand in hand with this, a mechanic for allowing players to "refresh" and live-update the refreshed listing of servers
 * Timeouts when connections fail
-* Modularize out the shared/boilerplate-feeling parts of the clients
- * Server stuff can maybe be such that we call a function of GateKeeperClient to get a server
-* Disconnect the events related to GK connection from the UI updates
- * Allow convenience methods for creating a jQuery element for the list of servers, but don't append it to body automatically
 * Reject clients if the server is "at capacity"
  * Figure out if this happens when the client authenticates or joins
  * It should probably be the case that the server only allows N authenticated users, and >N connections mid-authentication as long as <=N authenticate and successfully join
@@ -140,3 +137,4 @@ Here's all the files you might find in a basic framework+simple app scenario. I 
 * Should we implement a better scheme than sending passwords in the clear for verification?
 * I'm imagining "encrypt this random data with your key, and send me the result for comparison"
 * Better handling of error messages, routing them to where they need to go, etc.
+* Multithreadedness? Are functions atomic by nature of javascript?

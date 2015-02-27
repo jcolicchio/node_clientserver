@@ -5,8 +5,8 @@
 // for when you want to connect to a game server
 // Presently, it passes in a ServerInfo object
 
-// TODO: we've decided the GateKeeperClient code will handle the UI
-// we've decided that GK doesn't disconnect the player, maintains connection
+// TODO: list of all players connected
+// TODO: refresh mechanic needs to be fleshed out
 
 
 var GateKeeperInfo = this['GateKeeperInfo'];

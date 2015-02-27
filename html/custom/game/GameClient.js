@@ -13,12 +13,6 @@ var clientContent;
 var canvas;
 var ctx;
 
-var initUI = function() {
-
-	
-
-}
-
 var connectUI = function() {
 	clientContent = $("<div id='clientcontent'></div>");
 	$('body').append(clientContent);
@@ -88,7 +82,10 @@ var renderCanvas = function() {
 	}
 }
 
+// gatekeeper and server connection
+
 gk = GateKeeperClient();
+
 gk.typeFilter = "Game";
 
 gk.server.onopen = function() {

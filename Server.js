@@ -25,6 +25,7 @@
 // Put some kind of whitelist of server IPs, such that GateKeeper won't list an unauthorized server unless its IP matches
 // And furthermore, we could have some kind of config in some private GateKeeper setting
 
+// TODO: stop asking passwords after N failed attempts
 
 // we need ws for talking to clients
 var ws = require('ws');

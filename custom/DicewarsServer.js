@@ -1,24 +1,21 @@
 // require Server.js, create with null name, "Game" type, ignore the rest of the params, use default
 var Server = require('../Server.js')({type: "Dicewars"});
 
-// require Player.js on the server side, this smart object is passed back and forth between client and server
-var Player = require('../html/custom/game/Player.js');
+var Player = require('../html/custom/dicewars/Player.js');
+var Board = require('../html/custom/dicewars/Board.js');
+var Command = require('../html/custom/dicewars/Command.js');
 
 // keep iterating player count as players join
 var playerId = 0;
 
-Server.onConnect = function(client) {
-	// when the client connects AND authenticates, send the client a "joined message"
-	// this is arbitrary, we use this as client to verify the authentication went through
-	Server.send(client, "joined", null);
+var board = null;
+var teams = 2;
+var gameStarted = false;
+var gamePlayers = [];
+var boardWidth = 5;
+var boardHeight = 5;
 
-	// create a new player and assign it to the client, this is persistent for the duration of the connection
-	var player = Player.new(++playerId, "Anon"+playerId, {x: 20, y: 20}, "red");
-	client.player = player;
-	
-	// send the client itself so it knows its id, name
-	Server.send(client, "Player", player);
-
+var broadcastPlayers = function() {
 	// generate a list of players for each client
 	var list = [];
 	for(key in Server.clients) {
@@ -29,16 +26,55 @@ Server.onConnect = function(client) {
 	Server.broadcast("PlayerList", list);
 }
 
+Server.onConnect = function(client) {
+
+	// create a new player and assign it to the client, this is persistent for the duration of the connection
+	var player = Player.new(++playerId, "Anon"+playerId, {x: 20, y: 20}, "red");
+	client.player = player;
+	
+	// send the client itself so it knows its id, name
+	Server.send(client, "Player", player);
+
+
+	broadcastPlayers();
+
+	if(gameStarted) {
+		Server.send(client, "Board", board);
+	} else {
+		if(gamePlayers.length < teams) {
+			gamePlayers.push(player);
+			if(gamePlayers.length == teams) {
+				gameStarted = true;
+				board = Board.new(boardWidth, boardHeight, null, teams, 0).init();
+				Server.broadcast("Board", board);
+			}
+		}
+	}
+}
+
 Server.onDisconnect = function(client) {
 	
 	// update everyone with a new list of players, the client has already been removed and won't be updated
 	// but if we wanted the player which was removed, we could grab it with client.player one last time
 	// say, for a death animation or something, idk
-	var list = [];
-	for(key in Server.clients) {
-		list.push(Server.clients[key].player);
+	broadcastPlayers();
+
+	if(gamePlayers.indexOf(client.player) >= 0) {
+		gamePlayers.splice(gamePlayers.indexOf(client.player), 1);
+		// reset the board, if there are enough clients to do dis, we need to find one more to add
+		if(Server.clients.length >= teams) {
+			for(key in Server.clients) {
+				if(gamePlayers.indexOf(Server.clients[key].player) == -1) {
+					gamePlayers.push(Server.clients[key].player);
+					board = Board.new(boardWidth, boardHeight, null, teams, 0).init();
+					Server.broadcast("Board", board);
+					break;
+				}
+			}
+		} else {
+			gameStarted = false;
+		}
 	}
-	Server.broadcast("PlayerList", list);
 }
 
 Server.onMessage = function(client, key, payload) {
@@ -49,12 +85,15 @@ Server.onMessage = function(client, key, payload) {
 		client.player.pos = payload.pos;
 		client.player.color = payload.color;
 
-		// broadcast this update to all clients with a fresh PlayerList
-		var list = [];
-		for(key in Server.clients) {
-			list.push(Server.clients[key].player);
+		broadcastPlayers();
+
+	} else if(key == "Command") {
+		// received a command from a player
+		if(gameStarted && gamePlayers.indexOf(client.player) == board.turn) {
+			if(board.applyCommand(payload)) {
+				Server.broadcast("Board", board);
+			}
 		}
-		Server.broadcast("PlayerList", list);
 	}
 }
 
