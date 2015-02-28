@@ -24,14 +24,13 @@
 
 (function(exports){
 
-	var ServerExchange = this['ServerExchange'];
-	if(ServerExchange === undefined) {
-		ServerExchange = require('./ServerExchange.js');	
+	var Protocol = this['Protocol'];
+	if(Protocol === undefined) {
+		Protocol = require('./Protocol.js');	
 	}
 
-	ServerInfo = {};
-	ServerInfo.new = function(name, type, ip, port, players, capacity, hasPassword) {
-		var serverInfo = {
+	exports.new = function(name, type, ip, port, players, capacity, hasPassword) {
+		return {
 			name: name,
 			type: type,
 			ip: ip,
@@ -43,39 +42,32 @@
 				return this.ip + ":" + this.port;
 			}
 		}
-
-		return serverInfo;
 	}
-	ServerInfo.copy = function(si) {
+	exports.copy = function(si) {
 		if(si === null) {
 			return null;
 		}
-		return ServerInfo.new(si.name, si.type, si.ip, si.port, si.players, si.capacity, si.hasPassword);
+		return exports.new(si.name, si.type, si.ip, si.port, si.players, si.capacity, si.hasPassword);
 	}
-	ServerInfo.import = function(json) {
-		return ServerInfo.copy(JSON.parse(json));
+	exports.import = function(json) {
+		return exports.copy(JSON.parse(json));
 	}
-	
-	exports.new = ServerInfo.new;
-	exports.copy = ServerInfo.copy;
-	exports.import = ServerInfo.import;
 
+	// **** Protocol Registration ****
 
-	// **** ServerExchange Registration ****
-
-	// TODO: make sure to mention that every smart class needs to register with ServerExchange!
-	ServerExchange.register("ServerList", function(payload) {
+	// TODO: make sure to mention that every smart class needs to register with Protocol!
+	Protocol.register("ServerList", function(payload) {
 		//we're assuming payload is a list of ServerInfo objects
 		var serverList = [];
 		for(key in payload) {
-			serverList[key] = ServerInfo.copy(payload[key]);
+			serverList[key] = exports.copy(payload[key]);
 		}
 		return serverList;
 	});
 
-	ServerExchange.register("ServerInfo", function(payload) {
+	Protocol.register("ServerInfo", function(payload) {
 		// we're assuming the payload is a ServerInfo
-		return ServerInfo.copy(payload);
+		return exports.copy(payload);
 	});
 
 })(typeof exports === 'undefined'? this['ServerInfo']={}: exports);

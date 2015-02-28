@@ -8,7 +8,7 @@ var ws = require('ws');
 // we need io for server-to-server communication
 var io = require('socket.io');
 
-var ServerExchange = require('./html/server/ServerExchange.js');
+var Protocol = require('./html/server/Protocol.js');
 var ServerInfo = require('./html/server/ServerInfo.js');
 
 // the settings are private, the info is public
@@ -35,20 +35,20 @@ var clientSocket = ws.createServer({port:GateKeeperInfo.clientPort}, function (c
 
 	//send the new client the list of game servers
 	var list = serverSocket.generateServerList();
-	connection.send(JSON.stringify(ServerExchange.new("ServerList", list)));
+	connection.send(JSON.stringify(Protocol.new("ServerList", list)));
 	
 	connection.onmessage = function(event) {
 		// TODO: try catch! user might try to break the server
 		
-		var exc = ServerExchange.import(event.data);
+		var protocol = Protocol.import(event.data);
 
-		if(exc.key == "ServerList") {
+		if(protocol.key == "ServerList") {
 			// the player is asking for a server list!
 			// serialize serverItem list, maybe refresh it once? maybe refresh every 30 seconds or so?
 			var list = serverSocket.generateServerList();
-			connection.send(JSON.stringify(ServerExchange.new("ServerList", list)));
+			connection.send(JSON.stringify(Protocol.new("ServerList", list)));
 		} else {
-			console.log("unknown message type: "+exc.key+" sent to gatekeeper from client, with payload: "+JSON.stringify(exc.payload));
+			console.log("unknown message type: "+protocol.key+" sent to gatekeeper from client, with payload: "+JSON.stringify(protocol.payload));
 		}
 	};
 
@@ -104,19 +104,19 @@ serverSocket.on('connection', function (socket) {
 	
 	socket.on("message", function (data) {
 
-		var exc = ServerExchange.import(data);
+		var protocol = Protocol.import(data);
 		
-		if(exc.key == "ServerInfo") {
+		if(protocol.key == "ServerInfo") {
 
-			exc.payload.ip = socket.conn.remoteAddress;
+			protocol.payload.ip = socket.conn.remoteAddress;
 
 			// We can't use socket as key, it's too complex
 			//instead, we can search for the entry in serverSocket.servers, and use the index as a key
 
-			socket.serverItem = exc.payload;
+			socket.serverItem = protocol.payload;
 
 		} else {
-			console.log("unknown message type: "+exc.key+" sent to gatekeeper from server, with payload: "+JSON.stringify(exc.payload));
+			console.log("unknown message type: "+protocol.key+" sent to gatekeeper from server, with payload: "+JSON.stringify(protocol.payload));
 		}
 	});
 
@@ -144,7 +144,7 @@ serverSocket.refresh = function() {
 
 //this convenience method just returns an empty serverinfo request to be sent to a server
 serverSocket.serverInfoRequest = function() {
-	return JSON.stringify(ServerExchange.new("ServerInfo", null));
+	return JSON.stringify(Protocol.new("ServerInfo", null));
 }
 
 // this method doesn't clear any caches, it just takes serverItems and turns its values into an array

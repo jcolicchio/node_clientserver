@@ -101,9 +101,11 @@ Server.onMessage = function(client, key, payload) {
 		if(gameStarted && gamePlayers.indexOf(client.player) == board.turn) {
 			var result = board.applyCommand(payload);
 			if(result) {
-				payload.result = result;
 				Server.broadcast("Board", board);
-				Server.broadcast("Command", payload);
+				if(result !== true) {
+					payload.result = result;
+					Server.broadcast("Command", payload);
+				}
 			}
 		}
 	}

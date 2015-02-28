@@ -16,8 +16,8 @@
 // clients - list of authenticated clients
 
 // And convenience methods:
-// broadcast(key, payload) - send a key/payload ServerExchange to all clients
-// send(client, key, payload) - send key/payload ServerExchange to one client
+// broadcast(key, payload) - send a key/payload Protocol object to all clients
+// send(client, key, payload) - send key/payload Protocol object to one client
 // sendUpdatedInfo() - update the GateKeeper by calling getInfo() and sending
 
 // Keeping scalability in mind, theoretically any user should be able to spin one of these up
@@ -32,7 +32,7 @@ var ws = require('ws');
 // we need io for server-to-server communication
 var io = require('socket.io-client')
 
-var ServerExchange = require('./html/server/ServerExchange.js');
+var Protocol = require('./html/server/Protocol.js');
 var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
 var ServerInfo = require('./html/server/ServerInfo.js');
 var ServerSettings = require('./ServerSettings.js');
@@ -65,6 +65,7 @@ module.exports = function(options) {
 		if(key == "-n") {
 			options.name = value;
 		} else if(key == "-g") {
+			// TODO: -h for host
 			options.host = value
 		} else if(key == "-p") {
 			options.port = value;
@@ -101,12 +102,12 @@ module.exports = function(options) {
 			}
 		},
 		send: function(client, key, payload) {
-			var exc = ServerExchange.new(key, payload);
-			client.send(JSON.stringify(exc));
+			var protocol = Protocol.new(key, payload);
+			client.send(JSON.stringify(protocol));
 		},
 		sendUpdatedInfo: function() {
 			var info = this.getInfo();
-			this.private.gateKeeper.emit("message", JSON.stringify(ServerExchange.new("ServerInfo", info)));
+			this.private.gateKeeper.emit("message", JSON.stringify(Protocol.new("ServerInfo", info)));
 		},
 
 		private: {
@@ -144,11 +145,11 @@ module.exports = function(options) {
 				}
 			});
 			server.private.gateKeeper.on('message', function (event) {
-				var exc = ServerExchange.import(event);
-				if(exc.key == "ServerInfo") {
+				var protocol = Protocol.import(event);
+				if(protocol.key == "ServerInfo") {
 					server.sendUpdatedInfo();
 				} else {
-					console.log("unknown message type: "+exc.key+" sent to server from gatekeeper: "+JSON.stringify(exc.payload));
+					console.log("unknown message type: "+protocol.key+" sent to server from gatekeeper: "+JSON.stringify(protocol.payload));
 				}
 			});
 			this.private.gateKeeper.connect();
@@ -171,17 +172,17 @@ module.exports = function(options) {
 					// TODO: probably strip out any user text that has HTML or stuff?
 					// or should we just leave that to the custom implementation
 					
-					var exc = ServerExchange.import(event.data);
+					var protocol = Protocol.import(event.data);
 
-					if(!connection.authenticated && exc.key == "password") {
-						if(exc.payload == options.password) {
+					if(!connection.authenticated && protocol.key == "password") {
+						if(protocol.payload == options.password) {
 							// oauth here?
 							server.private.clientAuthenticated(connection);
 						} else {
 							server.send(connection, "password", null);
 						}
 					} else if(connection.authenticated && server.onMessage) {
-						server.onMessage(connection, exc.key, exc.payload);
+						server.onMessage(connection, protocol.key, protocol.payload);
 					}
 
 				};

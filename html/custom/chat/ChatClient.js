@@ -1,8 +1,5 @@
 // This is the client, should be pretty much custom code here
 
-var ServerExchange = this['ServerExchange'];
-var ServerInfo = this['ServerInfo'];
-
 // data
 var me;
 

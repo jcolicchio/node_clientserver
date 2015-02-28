@@ -10,8 +10,7 @@
 
 
 var GateKeeperInfo = this['GateKeeperInfo'];
-var ServerInfo = this['ServerInfo'];
-var ServerExchange = this['ServerExchange'];
+var Protocol = this['Protocol'];
 
 // var gk = GateKeeperClient();
 // gk.typeFilter = "Dicewars";
@@ -31,22 +30,22 @@ var GateKeeperClient = function() {
 			onerror: null, // to be called when there's some kind of client-server error
 
 			send: function(key, payload) {
-				gk.private.activeServer.send(JSON.stringify(ServerExchange.new(key, payload)));
+				gk.private.server.send(JSON.stringify(Protocol.new(key, payload)));
 			},
 			close: function() {
-				gk.private.activeServer.close();
+				gk.private.server.close();
 			}
 		},
 
 		private: {
-			socket: null,
+			gateKeeper: null,
 			connected: false,
 			servers: [],
-			activeServer: null,
+			server: null,
 
 			serverList: null,
 			requestServerList: function() {
-				gk.private.socket.send(JSON.stringify(ServerExchange.new("ServerList", null)));
+				gk.private.gateKeeper.send(JSON.stringify(Protocol.new("ServerList", null)));
 			},
 			generateServerListElements: function(serverItems) {
 				var serverList = $("<div id='serverlist'></div>");
@@ -82,10 +81,10 @@ var GateKeeperClient = function() {
 				return serverList;
 			},
 			joinServer: function(serverInfo) {
-				gk.private.activeServer = new WebSocket("ws://"+serverInfo.serverString());
+				gk.private.server = new WebSocket("ws://"+serverInfo.serverString());
 				// hide the ui, and show it again 
 				
-				gk.private.activeServer.onopen = function() {
+				gk.private.server.onopen = function() {
 					// gk has connected our client to our server, and will now handle some cruft
 					// TODO: login/auth cruft
 					// when gk has verified for us that both parties are happy, it'll call gk.onopen
@@ -101,7 +100,7 @@ var GateKeeperClient = function() {
 					}
 				}
 
-				gk.private.activeServer.onclose = function() {
+				gk.private.server.onclose = function() {
 					// disconnect cruft, call onclose, re-add server list/refresh or whatever
 					gk.server.connected = false;
 					gk.server.authenticated = false;
@@ -113,16 +112,15 @@ var GateKeeperClient = function() {
 					gk.private.requestServerList();
 				}
 
-				gk.private.activeServer.onmessage = function(event) {
-					var exc = ServerExchange.import(event.data);
-					console.log("client got server msg: "+exc.key+", "+exc.payload);
+				gk.private.server.onmessage = function(event) {
+					var protocol = Protocol.import(event.data);
 
 					if(gk.server.connected && gk.server.authenticated) {
 						// forward to client
 						if(gk.server.onmessage) {
-							gk.server.onmessage(exc.key, exc.payload);
+							gk.server.onmessage(protocol.key, protocol.payload);
 						}
-					} else if(exc.key == "auth") {
+					} else if(protocol.key == "auth") {
 						// intercept auth, do stuff
 						gk.server.authenticated = true;
 						// since we've authed, let the user know he's connected?
@@ -130,13 +128,13 @@ var GateKeeperClient = function() {
 							gk.server.onopen();
 						}
 
-					} else if(exc.key == "password") {
+					} else if(protocol.key == "password") {
 						var pw = prompt("What is the password?");
 						gk.server.send("password", pw);
 					}
 				}
 
-				gk.private.activeServer.onerror = function() {
+				gk.private.server.onerror = function() {
 					if(gk.server.onerror) {
 						gk.server.onerror();
 					}
@@ -144,24 +142,24 @@ var GateKeeperClient = function() {
 			}
 		},
 		connect: function() {
-			this.private.socket = new WebSocket("ws://"+window.location.hostname+":"+GateKeeperInfo.clientPort);
-			this.private.socket.onopen = function() {
+			this.private.gateKeeper = new WebSocket("ws://"+window.location.hostname+":"+GateKeeperInfo.clientPort);
+			this.private.gateKeeper.onopen = function() {
 				console.log("Connection to GK opened");
 				gk.connected = true;
 			}
-			this.private.socket.onclose = function() {
+			this.private.gateKeeper.onclose = function() {
 				console.log("Connection to GK closed");
 				gk.connected = false;
 			}
-			this.private.socket.onerror = function() {
+			this.private.gateKeeper.onerror = function() {
 				console.error("Connection error");
 			}
-			this.private.socket.onmessage = function(event) {
-				var exc = ServerExchange.import(event.data);
+			this.private.gateKeeper.onmessage = function(event) {
+				var protocol = Protocol.import(event.data);
 
-				if(exc.key == "ServerList") {
+				if(protocol.key == "ServerList") {
 
-					gk.private.servers = exc.payload;
+					gk.private.servers = protocol.payload;
 
 					if(!gk.server.connected) {
 						if(gk.private.serverList) {
@@ -172,7 +170,7 @@ var GateKeeperClient = function() {
 						$('body').append(gk.private.serverList);
 					}
 				} else {
-					console.log("unknown key "+exc.key+" sent from GateKeeper to client");
+					console.log("unknown key "+protocol.key+" sent from GateKeeper to client");
 				}
 			}
 		}

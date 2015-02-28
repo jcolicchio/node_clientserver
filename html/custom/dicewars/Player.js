@@ -1,12 +1,11 @@
 (function(exports){
 
-	var ServerExchange = this['ServerExchange'];
-	if(ServerExchange === undefined) {
-		ServerExchange = require('../../server/ServerExchange.js');	
+	var Protocol = this['Protocol'];
+	if(Protocol === undefined) {
+		Protocol = require('../../server/Protocol.js');	
 	}
 
-	Player = {};
-	Player.new = function(id, name, team) {
+	exports.new = function(id, name, team) {
 		var player = {
 			id: id,
 			name: name,
@@ -18,31 +17,26 @@
 
 		return player;
 	}
-	Player.copy = function(p) {
+	exports.copy = function(p) {
 		if(!p) {
 			return null;
 		}
-		return Player.new(p.id, p.name, p.team);
+		return exports.new(p.id, p.name, p.team);
 	}
-	Player.import = function(json) {
-		return Player.copy(JSON.parse(json));
+	exports.import = function(json) {
+		return exports.copy(JSON.parse(json));
 	}
-	
-	exports.new = Player.new;
-	exports.copy = Player.copy;
-	exports.import = Player.import;
 
+	// **** Protocol Registration ****
 
-	// **** ServerExchange Registration ****
-
-	ServerExchange.register("Player", function(payload) {
-		return Player.copy(payload);
+	Protocol.register("Player", function(payload) {
+		return exports.copy(payload);
 	});
 
-	ServerExchange.register("PlayerList", function(payload) {
+	Protocol.register("PlayerList", function(payload) {
 		var list = [];
 		for(key in payload) {
-			list.push(Player.copy(payload[key]));
+			list.push(exports.copy(payload[key]));
 		}
 		return list;
 	});

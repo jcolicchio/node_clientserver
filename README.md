@@ -91,11 +91,11 @@ Here's all the files you might find in a basic framework+simple app scenario. I 
 * **Boilerplate**
 * This is public GateKeeper info, such as what http and websocket ports it uses, and what hostname the server should connect to
 
-##### /html/server/ServerExchange.js
+##### /html/server/Protocol.js
 * **Boilerplate**
 * This is a transferrable object that wraps other objects
 * You can specify a key and payload, and it'll try to use the registered method for deserializing the object based on the key
-* You register these methods manually with ServerExchange.register(key, function)
+* You register these methods manually with Protocol.register(key, function)
 * You should register methods for each object in the object's class
  * For example, ServerInfo.js does this, it registers ServerInfo and ServerList
 

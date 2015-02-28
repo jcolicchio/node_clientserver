@@ -1,12 +1,11 @@
 (function(exports){
 
-	var ServerExchange = this['ServerExchange'];
-	if(ServerExchange === undefined) {
-		ServerExchange = require('../../server/ServerExchange.js');	
+	var Protocol = this['Protocol'];
+	if(Protocol === undefined) {
+		Protocol = require('../../server/Protocol.js');	
 	}
 
-	Command = {};
-	Command.new = function(source, dest, endTurn, result) {
+	exports.new = function(source, dest, endTurn, result) {
 		var command = {
 			source: source,
 			dest: dest,
@@ -16,25 +15,20 @@
 
 		return command;
 	}
-	Command.copy = function(c) {
+	exports.copy = function(c) {
 		if(!c) {
 			return null;
 		}
-		return Command.new(c.source, c.dest, c.endTurn, c.result);
+		return exports.new(c.source, c.dest, c.endTurn, c.result);
 	}
-	Command.import = function(json) {
-		return Command.copy(JSON.parse(json));
+	exports.import = function(json) {
+		return exports.copy(JSON.parse(json));
 	}
-	
-	exports.new = Command.new;
-	exports.copy = Command.copy;
-	exports.import = Command.import;
 
+	// **** Protocol Registration ****
 
-	// **** ServerExchange Registration ****
-
-	ServerExchange.register("Command", function(payload) {
-		return Command.copy(payload);
+	Protocol.register("Command", function(payload) {
+		return exports.copy(payload);
 	});
 
 })(typeof exports === 'undefined'? this['Command']={}: exports);

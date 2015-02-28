@@ -1,16 +1,15 @@
 (function(exports){
 
-	var ServerExchange = this['ServerExchange'];
-	if(ServerExchange === undefined) {
-		ServerExchange = require('../../server/ServerExchange.js');	
+	var Protocol = this['Protocol'];
+	if(Protocol === undefined) {
+		Protocol = require('../../server/Protocol.js');	
 	}
 	var Player = this['Player'];
 	if(Player === undefined) {
 		Player = require('./Player.js');	
 	}
 
-	Board = {};
-	Board.new = function(width, height, data, teams, turn, gamePlayers) {
+	exports.new = function(width, height, data, teams, turn, gamePlayers) {
 		var board = {
 			width: width,
 			height: height,
@@ -193,7 +192,7 @@
 
 		return board;
 	}
-	Board.copy = function(b) {
+	exports.copy = function(b) {
 		if(!b) {
 			return null;
 		}
@@ -201,21 +200,17 @@
 		for(key in b.gamePlayers) {
 			gp.push(Player.copy(b.gamePlayers[key]));
 		}
-		return Board.new(b.width, b.height, b.data, b.teams, b.turn, gp);
+		return exports.new(b.width, b.height, b.data, b.teams, b.turn, gp);
 	}
-	Board.import = function(json) {
-		return Board.copy(JSON.parse(json));
+	exports.import = function(json) {
+		return exports.copy(JSON.parse(json));
 	}
-	
-	exports.new = Board.new;
-	exports.copy = Board.copy;
-	exports.import = Board.import;
 
 
-	// **** ServerExchange Registration ****
+	// **** Protocol Registration ****
 
-	ServerExchange.register("Board", function(payload) {
-		return Board.copy(payload);
+	Protocol.register("Board", function(payload) {
+		return exports.copy(payload);
 	});
 
 })(typeof exports === 'undefined'? this['Board']={}: exports);

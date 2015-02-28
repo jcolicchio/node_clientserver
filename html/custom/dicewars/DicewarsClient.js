@@ -3,8 +3,6 @@
 
 // This is the client, should be pretty much custom code here
 
-var ServerExchange = this['ServerExchange'];
-var ServerInfo = this['ServerInfo'];
 var Board = this['Board'];
 var Player = this['Player'];
 
@@ -65,7 +63,7 @@ var renderCanvas = function() {
 var updateIdentity = function(player) {
 	console.log(JSON.stringify(player)+", "+player.name);
 	me = player;
-	identityElement.empty().append(player.name+", team: "+player.team);
+	identityElement.empty().append(player.name+", team: "+colors[player.team]);
 }
 
 var source = null;
@@ -73,10 +71,16 @@ var source = null;
 var board;
 var boardElement;
 
+var colors = ['red', 'yellow', 'pink', 'green', 'blue', 'purple', 'cyan', 'orange'];
+
 var generateBoardUI = function(board) {
-	var colors = ['red', 'yellow', 'pink', 'green', 'blue', 'purple', 'cyan', 'orange'];
 
 	var ret = $("<div class='board'></div>");
+
+	var turnElement = $("<div class='turn'></div>");
+	turnElement.append(colors[board.turn]+"'s turn");
+	ret.append(turnElement);
+
 	for(var i=0;i<board.height;i++) {
 		var row = $("<div class='row'></div>");
 		for(var j=0;j<board.width;j++) {
@@ -90,6 +94,9 @@ var generateBoardUI = function(board) {
 			cell.data("x", j);
 			cell.data("y", i);
 			cell.on('click', function() {
+				if(board.turn != me.team) {
+					return;
+				}
 				if(source) {
 					$('#selected').attr('id', null);
 					var dest = {
@@ -98,18 +105,11 @@ var generateBoardUI = function(board) {
 					}
 					var command = Command.new(source, dest, false);
 					source = null;
-					var outcome = board.applyCommand(command);
+					
+					//var outcome = board.applyCommand(command);
+					
 					gk.server.send("Command", command);
-					if(outcome) {
-						
-						var result = $("<div class='result'></div>");
-						result.append("attack: "+outcome.attack+", defense: "+outcome.defense);
-						
-						if(board.winner() >= 0) {
-							// current player won, no doubt
-							boardElement.append("<div class='winner'>Player "+board.turn+" wins!</div>");
-						}
-					}
+					
 				} else {
 					if($(this).data("team") == board.turn) {
 						$(this).attr('id', 'selected');
@@ -127,14 +127,20 @@ var generateBoardUI = function(board) {
 	endTurn.on('click', function() {
 		//submit to board, and if true, regen board
 		var command = Command.new(null, null, true);
+		source = null;
 		gk.server.send("Command", command);
-		if(board.applyCommand(command)) {
+		//if(board.applyCommand(command)) {
 			//ret.remove();
-			source = null;
+		//	source = null;
 			
-		}
+		//}
 	});
 	ret.append("<br/>").append(endTurn);
+					
+	if(board.winner() >= 0) {
+		// current player won, no doubt
+		boardElement.append("<div class='winner'>"+colors[board.turn]+" wins!</div>");
+	}
 	return ret;
 }
 
@@ -179,6 +185,13 @@ gk.server.onmessage = function (key, payload) {
 	} else if(key == "Command") {
 		// server told us an event happened!
 		console.log("current player attacked "+JSON.stringify(payload.dest)+" with "+payload.result.attack+", defender had "+payload.result.defense);
+		if(payload.result !== null && payload.result !== undefined) {
+			var outcome = payload.result;
+			var result = $("<div class='result'></div>");
+			result.append( "attack: ("+payload.source.x+","+payload.source.y+"): "+outcome.attack+", defense: ("+payload.dest.x+","+payload.dest.y+"): "+outcome.defense);
+			boardElement.append(result);
+		}
+		
 	} else {
 		console.log("server sent client unknown key: "+key+" with payload: "+payload);
 	}
