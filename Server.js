@@ -64,8 +64,7 @@ module.exports = function(options) {
 		var value = process.argv[i];
 		if(key == "-n") {
 			options.name = value;
-		} else if(key == "-g") {
-			// TODO: -h for host
+		} else if(key == "-h") {
 			options.host = value
 		} else if(key == "-p") {
 			options.port = value;
