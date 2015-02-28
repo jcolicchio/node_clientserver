@@ -30,7 +30,9 @@
 // we need ws for talking to clients
 var ws = require('ws');
 // we need io for server-to-server communication
-var io = require('socket.io-client')
+var io = require('socket.io-client');
+
+var AES = require('./html/server/AES.js');
 
 var Protocol = require('./html/server/Protocol.js');
 var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
@@ -159,8 +161,13 @@ module.exports = function(options) {
 				server.private.connections.push(connection);
 				connection.authenticated = false;
 
+				// TODO: refactor this a bit, sendPasswordChallenge or something
 				if(options.password) {
-					server.send(connection, "password", null);
+					connection.clearText = AES.randomBytes(128).toString('base64');
+					connection.attempts = 0;
+					console.log("clearText: "+connection.clearText);
+					var enc = AES.encrypt(connection.clearText, options.password);
+					server.send(connection, "password", enc);
 				} else {
 					server.private.clientAuthenticated(connection);
 				}
@@ -174,11 +181,19 @@ module.exports = function(options) {
 					var protocol = Protocol.import(event.data);
 
 					if(!connection.authenticated && protocol.key == "password") {
-						if(protocol.payload == options.password) {
+						if(protocol.payload == connection.clearText) {
 							// oauth here?
 							server.private.clientAuthenticated(connection);
 						} else {
-							server.send(connection, "password", null);
+							connection.attempts += 1;
+							if(ServerSettings.internals.passwordMaxTries && connection.attempts >= ServerSettings.internals.passwordMaxTries) {
+								// disconnect, don't re send
+								connection.close();
+							} else {
+								connection.clearText = AES.randomBytes(128).toString('base64');
+								var enc = AES.encrypt(connection.clearText, options.password);
+								server.send(connection, "password", enc);
+							}
 						}
 					} else if(connection.authenticated && server.onMessage) {
 						server.onMessage(connection, protocol.key, protocol.payload);

@@ -8,6 +8,8 @@ var ws = require('ws');
 // we need io for server-to-server communication
 var io = require('socket.io');
 
+var AES = require('./html/server/AES.js');
+
 var Protocol = require('./html/server/Protocol.js');
 var ServerInfo = require('./html/server/ServerInfo.js');
 

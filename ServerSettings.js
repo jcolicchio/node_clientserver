@@ -25,3 +25,7 @@ exports.defaults = {
 	capacity: 8,
 	password: null
 };
+
+exports.internals = {
+	passwordMaxTries: 1
+}

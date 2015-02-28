@@ -12,6 +12,8 @@
 var GateKeeperInfo = this['GateKeeperInfo'];
 var Protocol = this['Protocol'];
 
+var AES = this['AES'];
+
 // var gk = GateKeeperClient();
 // gk.typeFilter = "Dicewars";
 // gk.server.onopen = function() { gk.server.send("message", "i joined!"); };
@@ -103,9 +105,11 @@ var GateKeeperClient = function() {
 				gk.private.server.onclose = function() {
 					// disconnect cruft, call onclose, re-add server list/refresh or whatever
 					gk.server.connected = false;
-					gk.server.authenticated = false;
-					if(gk.server.onclose) {
-						gk.server.onclose();
+					if(gk.server.authenticated) {
+						gk.server.authenticated = false;
+						if(gk.server.onclose) {
+							gk.server.onclose();
+						}
 					}
 
 					// ask GK for another server list?
@@ -130,7 +134,13 @@ var GateKeeperClient = function() {
 
 					} else if(protocol.key == "password") {
 						var pw = prompt("What is the password?");
-						gk.server.send("password", pw);
+						var cleartext = "";
+						try {
+							cleartext = AES.decrypt(protocol.payload, pw);
+						} catch (e) {
+							cleartext = "";
+						}
+						gk.server.send("password", cleartext);
 					}
 				}
 
