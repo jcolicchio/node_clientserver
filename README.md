@@ -11,7 +11,7 @@ I'm writing some js code that can run on both client and node-server
 
 * Server accepts the following command-line arguments:
 	* ```-p <server port>```
-	* ```-g <gatekeeper ip>:<gatekeeper port>```
+	* ```-h <host ip>:<host port>```
 	* ```-n <server name>```
 	* ```-s <server secret/password>```
     
