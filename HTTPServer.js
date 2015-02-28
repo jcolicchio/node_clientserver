@@ -3,8 +3,6 @@ var fs = require('fs');
 var url = require('url');
 var path = require('path');
 
-var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
-
 exports.init = function(webPort) {
 	var server = http.createServer(function (request, response) {
 
@@ -53,7 +51,7 @@ exports.init = function(webPort) {
 
 	server.listen(webPort);
 
-	console.log("Server running at http://127.0.0.1:"+GateKeeperInfo.webPort+"/");
+	console.log("Server running at http://127.0.0.1:"+webPort+"/");
 
 	return server;
 }
