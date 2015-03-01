@@ -1,5 +1,8 @@
 // This is the client, should be pretty much custom code here
 
+var Board = this['Board'];
+var Player = this['Player'];
+
 // data
 var me;
 var players;
@@ -98,6 +101,27 @@ var updateIdentity = function(player) {
 	console.log(JSON.stringify(player)+", "+player.name);
 	me = player;
 	identityElement.empty().append(player.name);
+}
+
+var source = null;
+var board = [[0,0,0],[0,0,0],[0,0,0]];
+var boardElement;
+
+var generateBoardUI = function(board) {
+    if (board != undefined && board != null) {
+        for (var i = 0; i<3; i++){
+            for (var j = 0; j<3; j++){
+                if (board[i][j] === 2){
+                ctx.fillStyle = "red";
+                ctx.fillRect(i*100, j*100, 50, 50);
+                } else if (board[i][j] === 1){
+                ctx.fillStyle = "blue";
+                ctx.fillRect(i*100, j*100, 50, 50);
+                }
+            }
+        }
+    }
+
 }
 
 // gatekeeper and server connection

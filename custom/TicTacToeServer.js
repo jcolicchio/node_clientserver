@@ -3,9 +3,25 @@ var Server = require('../Server.js')({type: "TicTacToe"});
 
 // require Player.js on the server side, this smart object is passed back and forth between client and server
 var Player = require('../html/custom/tictactoe/Player.js');
+var Board = require('../html/custom/tictactoe/Board.js');
 
 // keep iterating player count as players join
 var playerId = 0;
+var gamePlayers = [];
+var gameStarted = false;
+
+var broadcastPlayers = function() {
+    var list = [];
+    for(key in Server.clients) {
+        var player = Server.clients[key].player;
+        list.push(player);
+        if(player.team != gamePlayers.indexOf(player))
+            player.team = gamePlayers.indexOf(player);
+            Server.send(Server.clients[key], "Player", player);
+        }
+    }
+    Server.broadcast("PlayerList", list);
+}
 
 Server.onConnect = function(client) {
 
@@ -15,7 +31,19 @@ Server.onConnect = function(client) {
 	
 	// send the client itself so it knows its id, name
 	Server.send(client, "Player", player);
-
+    
+    if (gameStarted) {
+        Server.send(client, "Board", board);
+    else{
+        if (gamePlayers.length < teams)
+            gamePlayers.push(player);
+            
+            if (gamePlayer.length == teams) {
+                gameStarted = true;
+                board = Board.new(0,teams,null);
+                Server.broadcast("Board", board);
+            }
+    }
 	// generate a list of players for each client
 	var list = [];
 	for(key in Server.clients) {
@@ -23,7 +51,8 @@ Server.onConnect = function(client) {
 	}
 
 	// send everyone the player list, with each player's position and color being up to date
-	Server.broadcast("PlayerList", list);
+	//Server.broadcast("PlayerList", list);
+    broadcastPlayers();
 }
 
 Server.onDisconnect = function(client) {
@@ -31,11 +60,24 @@ Server.onDisconnect = function(client) {
 	// update everyone with a new list of players, the client has already been removed and won't be updated
 	// but if we wanted the player which was removed, we could grab it with client.player one last time
 	// say, for a death animation or something, idk
-	var list = [];
-	for(key in Server.clients) {
-		list.push(Server.clients[key].player);
-	}
-	Server.broadcast("PlayerList", list);
+    if (gamePlayers.indexOf(client.player) >= 0) {
+        gamePlayers.splice(gamePlayers.indexOf(client.player), 1);
+        if(Server.clients.length >= teams) {
+            for(key in Server.clients) {
+                if(gamePlayers.indexOf(Server.clients[key].player) == -1) {
+                    gamePlayers.push(Server.clients[key].player);
+                    board = Board.new(0,teams,null).init();
+                    Server.broadcast("board",board);
+                    break;
+                }
+            }
+        } else {
+            gameStarted = false;
+            board = null;
+            Server.broadcast("Board", board);
+        }
+    }
+    broadcastPlayers();
 }
 
 Server.onMessage = function(client, key, payload) {
