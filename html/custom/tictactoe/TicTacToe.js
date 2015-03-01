@@ -30,6 +30,20 @@ var connectUI = function() {
 	clientContent.append(canvas);
 	ctx = canvas[0].getContext("2d");
 
+	$("#canvas").click(function(e){
+		var x = Math.floor(e.pageX-$("#canvas").offset().left);
+		var y = Math.floor(e.pageY-$("#canvas").offset().left);
+		console.log("canvas clicked "+x+", "+y);
+	});
+	/*	
+	var canvasObj = document.getElementById("canvas");
+	canvasObj.addEventListener("click", function(evt){
+		var rect = canvasObj.getBoundingClientRect();
+		var mousePosX = evt.clientX - rect.left;
+		var mousePosY = evt.clientY - rect.top;
+		console.log("canvas clicked at "+ mousePosX + ", " + mousePosY);
+	}, false);
+	*/
 	var colors = $("<form action=''></form>");
 	clientContent.append(colors);
 
