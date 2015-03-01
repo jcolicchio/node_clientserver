@@ -17,6 +17,9 @@ var connectUI = function() {
 	clientContent = $("<div id='clientcontent'></div>");
 	$('body').append(clientContent);
 
+	var turnElement = $("<div class='turn'></div>");
+	turnElement.append("player's turn"); //TODO: make this work
+	clientContent.append(turnElement);
 
 	var disconnectButton = $("<input type='submit' id='disconnect' value='Disconnect' />");
 	clientContent.append(disconnectButton).append("<br/>");
@@ -32,8 +35,9 @@ var connectUI = function() {
 
 	$("#canvas").click(function(e){
 		var x = Math.floor(e.pageX-$("#canvas").offset().left);
-		var y = Math.floor(e.pageY-$("#canvas").offset().left);
+		var y = Math.floor(e.pageY-$("#canvas").offset().top);
 		console.log("canvas clicked "+x+", "+y);
+		gk.server.send("coord", {x:x,y:y});
 	});
 	/*	
 	var canvasObj = document.getElementById("canvas");
@@ -44,6 +48,10 @@ var connectUI = function() {
 		console.log("canvas clicked at "+ mousePosX + ", " + mousePosY);
 	}, false);
 	*/
+
+	identityElement = $("<div id='identity'></div>");
+	clientContent.append(identityElement);
+
 	var colors = $("<form action=''></form>");
 	clientContent.append(colors);
 
@@ -86,6 +94,12 @@ var renderCanvas = function() {
 
 }
 
+var updateIdentity = function(player) {
+	console.log(JSON.stringify(player)+", "+player.name);
+	me = player;
+	identityElement.empty().append(player.name);
+}
+
 // gatekeeper and server connection
 
 gk = GateKeeperClient();
@@ -107,9 +121,13 @@ gk.server.onerror = function() {
 }
 
 gk.server.onmessage = function(key, payload) {
+	if(key == "update") {
+		console.log("print out what the server says: "+payload.result);
+	}
+
 	if(key == "Player") {
 		// if the server sends a lone player, it's me
-		me = payload;
+		updateIdentity(payload);
 		$("input[name='color'][value='"+payload.color+"']").click();
 	} else if(key == "PlayerList") {
 		players = payload;

@@ -40,6 +40,13 @@ Server.onDisconnect = function(client) {
 
 Server.onMessage = function(client, key, payload) {
 	// when we receive a message from a client, if it's a player whose ID matches the client's player ID:
+	if(key == "coord") {
+		var x = payload.x;
+		var y = payload.y;
+		console.log("server received coord"+x+", "+y);
+		payload.result = "test";
+		Server.broadcast("update", payload); 
+	}
 	if(key == "Player" && client.player.id == payload.id) {
 		// the client has sent us a player, it wants to update the player's name, pos, and color if changed
 		client.player.name = payload.name;
