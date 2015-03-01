@@ -87,6 +87,10 @@ Here's all the files you might find in a basic framework+simple app scenario. I 
 ## /html/server
 * This is the directory for code that's shared between client and server
 
+##### /html/server/AES.js
+* **Boilerplate**
+* This is a convenience module for encrypting and decrypting in a uniform manner on client and server
+
 ##### /html/server/GateKeeperInfo.js
 * **Boilerplate**
 * This is public GateKeeper info, such as what http and websocket ports it uses, and what hostname the server should connect to
@@ -107,34 +111,73 @@ Here's all the files you might find in a basic framework+simple app scenario. I 
 
 
 ## Pressing Tasks:
-* OAuth with Facebook or something
-* Some kind of backend to store player stats, 
-* Implement whitelist/blacklist for incoming server connections
-* Devise a scheme for allowing servers to authenticate new connections with the GateKeeper
- * At the end of this process, GK should disconnect the player from GK, and have them reconnect when done with the server
- * No reason for a player in-game to sit around on GK
-* Create a better game example. I'm thinking Risk, DiceWars, or Pong or something
-* Refreshing list of servers periodically, or based on certain events
-* Obviously I don't want to blast every GK client whenever any client joins or leaves a room
- * Actually, would this be bad? Needs testing
+* having an auth token
+	* oauth - facebook?
+		* client side, gatekeeperclient does this
+		* server side, server.js includes auth as part of its protocol
+		* passport - do we need express for this?
+			* if so, can we tie it into the example code, auto-insert aes, gatekeeperclient, etc
+			* investigate passport-socket.io, cuz we use socket.io for server->gk communication
 
-## Easier Tasks:
-* Try-catch on user-submitted data, of any kind, including server->GateKeeper
-* Make sure we're going HTTPServer locked to html/ folder properly, we want to make sure the root JS is inaccessible
- * Reason being, some .js files have private config info stored in them, right?
-* Drop unresponsive servers from GateKeeper's listing
-* Heartbeat for each Server
- * Hand in hand with this, a mechanic for allowing players to "refresh" and live-update the refreshed listing of servers
+* Some kind of backend to store player stats, custom login if they dont use fb, etc?
+
+* strategies for limiting/validating servers
+	* ip black/whitelist
+	* password (using AES, same as client->server)
+
+* Create a better game example. I'm thinking Risk, or Pong or something
+* GateKeeperClient UI
+	* Refreshing list of servers periodically, or based on certain events
+	* Obviously I don't want to blast every GK client whenever any client joins or leaves a room
+		* Actually, would this be bad? Needs testing
+	* All players connected, friends list, etc
+
+* sanitizing user input
+	* making sure a server doesn't crash if the user sends something unexpected
+	* making sure the user can't send html or the like
+
+* important! investigate multithreadedness
+	* definitely investigate any kind of instance where 2 clients want the server to mutate state
+	* does the server handle the callbacks sequentially by nature?
+	* it'd be bad if we could have code running in two places at once
+	* otherwise, if not the case, it's good, we can just write callbacks to only do things in atomic ways
+		* that is, dont depend on callbacks A and B occurring without C interrupting and mutating state
+		* because we probably cant guarantee that unless A calls B, even if A async triggers B
+			* maybe C was queued after A, but before A called B, network wise? idk.
+
+* example code
+	* index.html is a mess and requires more than 1 or 2 boilerplate JS files
+	* can we figure out a way to combine them into one cleanly for production?
+	* it'd be great to merge aes, jsonformatter, AES, gatekeeperclient, etc into one file
+	* can we do this dynamically, with http server? i.e. insert file contents at the top of <head>
+
 * Timeouts when connections fail
-* Reject clients if the server is "at capacity"
- * Figure out if this happens when the client authenticates or joins
- * It should probably be the case that the server only allows N authenticated users, and >N connections mid-authentication as long as <=N authenticate and successfully join
+	* Speaks for itself, do websockets or socket.io handle this already?
 
-## Future Stuff:
+* Reject clients if the server is "at capacity"
+	* Figure out if this happens when the client authenticates or joins
+	* It should probably be the case that the server only allows N authenticated users
+		* Allow >N connections mid-authentication as long as <=N authenticate and successfully join
+
 * When/how/why should we alert players in-server when the server loses connection with GateKeeper?
- * Might be important if the server reports user scores etc back to the GK at the end of the game
-* Authentication between server and GK
-* Should we implement a better scheme than sending passwords in the clear for verification?
-* I'm imagining "encrypt this random data with your key, and send me the result for comparison"
+	* Might be important if the server reports user scores etc back to the GK at the end of the game
+	
 * Better handling of error messages, routing them to where they need to go, etc.
-* Multithreadedness? Are functions atomic by nature of javascript?
+
+## Low Priority:
+* AES uses JsonFormatter and it's weird, can we get away with format:none?
+* investigate if it'd be worth it to switch entirely to socket.io (does socket.io support browser?)
+* investigate ways of keeping the server running
+		foreverjs?
+* version numbers to verify server, client, GK are all talking the same language
+* we need a name...
+	* Synovial
+	* Unigator
+	* Served.js
+	* Uninode
+	* Nodify
+	* Smarty
+	* UnitedStates
+
+	
+
