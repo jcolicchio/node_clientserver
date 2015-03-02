@@ -42,7 +42,7 @@ Server.onConnect = function(client) {
             
             if (gamePlayers.length == teams) {
                 gameStarted = true;
-                board = Board.new(0,teams,null);
+                board = Board.new(0,teams,null).init();
                 Server.broadcast("Board", board);
             }
     }
@@ -93,7 +93,7 @@ Server.onMessage = function(client, key, payload) {
 		temp.x = Math.floor(x/100);
 		temp.y = Math.floor(y/100);
 		console.log("server received coord"+x+", "+y);
-		if (board === undefined || board === null)
+		if (board == undefined || board == null)
 			board = Board.new(0,teams,null).init();
 		var outcome = board.applyCommand(1,temp);
 		Server.broadcast("Board", board); 
