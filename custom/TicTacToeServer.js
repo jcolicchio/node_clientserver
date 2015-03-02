@@ -6,8 +6,10 @@ var Player = require('../html/custom/tictactoe/Player.js');
 var Board = require('../html/custom/tictactoe/Board.js');
 
 // keep iterating player count as players join
+var board;
 var playerId = 0;
 var gamePlayers = [];
+var teams = 2;
 var gameStarted = false;
 
 var broadcastPlayers = function() {
@@ -15,7 +17,7 @@ var broadcastPlayers = function() {
     for(key in Server.clients) {
         var player = Server.clients[key].player;
         list.push(player);
-        if(player.team != gamePlayers.indexOf(player))
+        if(player.team != gamePlayers.indexOf(player)){
             player.team = gamePlayers.indexOf(player);
             Server.send(Server.clients[key], "Player", player);
         }
@@ -34,11 +36,11 @@ Server.onConnect = function(client) {
     
     if (gameStarted) {
         Server.send(client, "Board", board);
-    else{
+    }else{
         if (gamePlayers.length < teams)
             gamePlayers.push(player);
             
-            if (gamePlayer.length == teams) {
+            if (gamePlayers.length == teams) {
                 gameStarted = true;
                 board = Board.new(0,teams,null);
                 Server.broadcast("Board", board);
@@ -60,6 +62,7 @@ Server.onDisconnect = function(client) {
 	// update everyone with a new list of players, the client has already been removed and won't be updated
 	// but if we wanted the player which was removed, we could grab it with client.player one last time
 	// say, for a death animation or something, idk
+
     if (gamePlayers.indexOf(client.player) >= 0) {
         gamePlayers.splice(gamePlayers.indexOf(client.player), 1);
         if(Server.clients.length >= teams) {
@@ -67,13 +70,14 @@ Server.onDisconnect = function(client) {
                 if(gamePlayers.indexOf(Server.clients[key].player) == -1) {
                     gamePlayers.push(Server.clients[key].player);
                     board = Board.new(0,teams,null).init();
-                    Server.broadcast("board",board);
+                    Server.broadcast("Board",board);
                     break;
                 }
             }
         } else {
             gameStarted = false;
-            board = null;
+            //board = null;
+            board = Board.new(0,teams,null).init();
             Server.broadcast("Board", board);
         }
     }
@@ -85,9 +89,14 @@ Server.onMessage = function(client, key, payload) {
 	if(key == "coord") {
 		var x = payload.x;
 		var y = payload.y;
+		var temp = payload;
+		temp.x = Math.floor(x/100);
+		temp.y = Math.floor(y/100);
 		console.log("server received coord"+x+", "+y);
-		payload.result = "test";
-		Server.broadcast("update", payload); 
+		if (board === undefined || board === null)
+			board = Board.new(0,teams,null).init();
+		var outcome = board.applyCommand(1,temp);
+		Server.broadcast("Board", board); 
 	}
 	if(key == "Player" && client.player.id == payload.id) {
 		// the client has sent us a player, it wants to update the player's name, pos, and color if changed

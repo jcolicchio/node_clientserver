@@ -21,7 +21,8 @@
             },
             applyCommand: function(team, target) {
                 // team x is 1, team o is 2
-                this.data [target.x][target.y] = team;
+                if (this.data !== null && this.data[0] !== null)
+                	this.data [target.x][target.y] = team;
             },
             winner: function() {
             }
