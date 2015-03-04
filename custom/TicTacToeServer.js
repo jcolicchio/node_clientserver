@@ -86,16 +86,23 @@ Server.onDisconnect = function(client) {
 
 Server.onMessage = function(client, key, payload) {
 	// when we receive a message from a client, if it's a player whose ID matches the client's player ID:
-	if(key == "coord") {
+	if(key == "coord" && gameStarted == true) {
 		var x = payload.x;
 		var y = payload.y;
+		var id = payload.id;
+		console.log("server received id: "+id);
 		var temp = payload;
 		temp.x = Math.floor(x/100);
 		temp.y = Math.floor(y/100);
 		console.log("server received coord"+x+", "+y);
 		if (board == undefined || board == null)
 			board = Board.new(0,teams,null).init();
-		var outcome = board.applyCommand(1,temp);
+		var outcome = board.applyCommand(id,temp);
+		var winner = board.winner();
+		if (winner !== 0) {
+			console.log("THERE IS A WINNER");
+			gameStarted = false;
+		}
 		Server.broadcast("Board", board); 
 	}
 	if(key == "Player" && client.player.id == payload.id) {

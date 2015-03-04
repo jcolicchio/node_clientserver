@@ -37,7 +37,8 @@ var connectUI = function() {
 		var x = Math.floor(e.pageX-$("#canvas").offset().left);
 		var y = Math.floor(e.pageY-$("#canvas").offset().top);
 		console.log("canvas clicked "+x+", "+y);
-		gk.server.send("coord", {x:x,y:y});
+		gk.server.send("coord", {x:x,y:y,id:me.id});
+		console.log("me: "+ me.id);
 	});
 	/*	
 	var canvasObj = document.getElementById("canvas");
