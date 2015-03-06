@@ -9,6 +9,18 @@
 // TODO: refresh mechanic needs to be fleshed out
 
 
+// TODO: login/sign up/register ui elements
+// TODO: check cookies for auth token
+	// on start, if cookie found, when connecting immediately try to auth for the user
+	// if the token is valid, pull their user?
+	// hell, just do a GetUser with the cookie'd token
+	// add login/signup ui options to start
+	// those should dynamically show fields for registration/login
+	// when using those, we call gk.private.gateKeeper.send("Register", {email, hash})
+	// make sure to use MD5 on the password field before submitting
+	
+
+
 var GateKeeperInfo = this['GateKeeperInfo'];
 var Protocol = this['Protocol'];
 
@@ -180,7 +192,7 @@ var GateKeeperClient = function() {
 						$('body').append(gk.private.serverList);
 					}
 				} else {
-					console.log("unknown key "+protocol.key+" sent from GateKeeper to client");
+					console.log("unknown key/value "+protocol.key+"/"+protocol.payload+" sent from GateKeeper to client");
 				}
 			}
 		}

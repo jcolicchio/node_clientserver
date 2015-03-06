@@ -3,6 +3,13 @@
 // presumably GateKeeper will assign client A an auth token
 // client A needs to send it to server B, so that server B can double-check client A's identity
 
+// TODO: we've established interaction between client and GK
+// we need to nail down interaction between server and GK, and half of that is here
+// we mostly have it done, i think
+// server needs to find out upon connection if an auth scheme is being used
+// because otherwise it'll ask the user for a token each time, and that's bad if no auth
+
+
 // we need ws for client-to-server communication
 var ws = require('ws');
 // we need io for server-to-server communication
@@ -15,6 +22,10 @@ var ServerInfo = require('./html/server/ServerInfo.js');
 
 // the settings are private, the info is public
 var GateKeeperSettings = require('./GateKeeperSettings.js');
+var authenticator = GateKeeperSettings.authenticator;
+if(authenticator === null) {
+	authenticator = require('./authentication/Authenticator.js')({userStore:null,tokenStore:null});
+}
 
 // the info is public, contains stuff like which ports to use, etc
 var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
@@ -37,6 +48,8 @@ var clientSocket = ws.createServer({port:GateKeeperInfo.clientPort}, function (c
 	//send the new client the list of game servers
 	var list = serverSocket.generateServerList();
 	connection.send(JSON.stringify(Protocol.new("ServerList", list)));
+
+	connection.authenticated = false;
 	
 	connection.onmessage = function(event) {
 		// TODO: try catch! user might try to break the server
@@ -48,6 +61,58 @@ var clientSocket = ws.createServer({port:GateKeeperInfo.clientPort}, function (c
 			// serialize serverItem list, maybe refresh it once? maybe refresh every 30 seconds or so?
 			var list = serverSocket.generateServerList();
 			connection.send(JSON.stringify(Protocol.new("ServerList", list)));
+		} else if(protocol.key == "Authenticate") {
+			// the user has sent the GK its token for validation
+			connection.authenticated = authenticator.isValidToken(protocol.payload);
+			connection.send(JSON.stringify(Protocol.new("Authenticate", connection.authenticated)));
+		} else if(protocol.key == "Login") {
+			console.log(protocol.payload);
+			// the user has sent an email/hash combo, check it in the server
+			var email = protocol.payload.email;
+			var hash = protocol.payload.hash;
+
+			
+			var token = authenticator.loginUser(email, hash);
+			if(token !== false) {
+				connection.authenticated = true;
+			}
+			connection.send(JSON.stringify(Protocol.new("Login", token)));
+
+		} else if(protocol.key == "Logout") {
+			// token
+			if(authenticator.logoutUser(protocol.payload)) {
+				connection.authenticated = false;
+			}
+			connection.send(JSON.stringify(Protocol.new("Logout", !connection.authenticated)));
+
+		} else if(protocol.key == "Update") {
+			// user, token
+			var user = protocol.payload.user;
+			var token = protocol.payload.token;
+			
+			connection.send(JSON.stringify(Protocol.new("Update", authenticator.updateUser(token, user))));
+
+		} else if(protocol.key == "GetUser") {
+			connection.send(JSON.stringify(Protocol.new("User", authenticator.getUserForToken(protocol.payload))));
+
+		} else if(protocol.key == "Register") {
+			// email, hash
+			var email = protocol.payload.email;
+			var hash = protocol.payload.hash;
+			console.log("registering "+email+"/"+hash);
+
+			var token = authenticator.registerUser(email, hash);
+			console.log("token? "+token);
+
+			connection.send(JSON.stringify(Protocol.new("Register", token)));
+
+		} else if(protocol.key == "UpdatePassword") {
+			var token = protocol.payload.token;
+			var currentHash = protocol.payload.currentHash;
+			var newHash = protocol.payload.newHash;
+
+			connection.send(JSON.stringify(Protocol.new("UpdatePassword", authenticator.updatePassword(token, currentHash, newHash))));
+
 		} else {
 			console.log("unknown message type: "+protocol.key+" sent to gatekeeper from client, with payload: "+JSON.stringify(protocol.payload));
 		}
@@ -116,7 +181,14 @@ serverSocket.on('connection', function (socket) {
 
 			socket.serverItem = protocol.payload;
 
-		} else {
+		} else if(protocol.key == "Authenticate") {
+			// the server is asking GK to validate a token sent by a user, do so now.
+			if(!authenticator) {
+				socket.send(JSON.stringify(Payload.new("Authenticate", true)));
+			} else {
+				socket.send(JSON.stringify(Payload.new("Authenticate", authenticator.tokenIsValid(protocol.payload))));
+			}
+		} else  {
 			console.log("unknown message type: "+protocol.key+" sent to gatekeeper from server, with payload: "+JSON.stringify(protocol.payload));
 		}
 	});

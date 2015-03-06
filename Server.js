@@ -25,7 +25,17 @@
 // Put some kind of whitelist of server IPs, such that GateKeeper won't list an unauthorized server unless its IP matches
 // And furthermore, we could have some kind of config in some private GateKeeper setting
 
-// TODO: stop asking passwords after N failed attempts
+// TODO: figure out the server side of the user authentication process
+// something like, when they get the right password, or if no passwords are being used, call some function
+// server should know if the gk uses auth
+// if the gk doesn't use auth, this function just finishes authentication process
+// if the gk does use auth, this function asks the client for a token
+// when the client gives a token, the server ties the token to the client,
+	// and sends the token to the server
+	// when the token comes back as valid... we need the gk to tell the server WHICH token was valid
+	// presumably it sends an id for a client too?
+	// anyway, then the server uses that information to figure out which connection/client was just auth'd and accepts him
+	// however if the GK says false, the server has to notify and disconnect the client
 
 // we need ws for talking to clients
 var ws = require('ws');

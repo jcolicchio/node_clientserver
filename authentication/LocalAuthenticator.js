@@ -90,11 +90,6 @@ module.exports = function(config) {
 			if(auth.userStore.insert({id:id, email:email, hash: hash})) {
 				// go ahead and authenticate
 				var token = newAuthToken();
-				var id = matchingUsers[0].row.id;
-				var existingTokenRows = auth.tokenStore.find({id:id}, 1);
-				if(existingTokenRows.length == 1) {
-					auth.tokenStore.remove({id:id},1);
-				}
 				if(auth.tokenStore.insert({id:id, token:token})) {
 					return token;
 				}
@@ -107,6 +102,11 @@ module.exports = function(config) {
 		var matchingUsers = auth.userStore.find({email:email, hash:hash}, 1);
 		if(matchingUsers.length == 1) {
 			var token = newAuthToken();
+			var id = matchingUsers[0].row.id;
+			var existingTokenRows = auth.tokenStore.find({id:id}, 1);
+			if(existingTokenRows.length == 1) {
+				auth.tokenStore.remove({id:id},1);
+			}
 			if(auth.tokenStore.insert({id:id, token: token})) {
 				return token;
 			}
