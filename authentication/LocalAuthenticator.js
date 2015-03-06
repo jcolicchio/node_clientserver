@@ -1,4 +1,4 @@
-var User = require('./html/server/User.js');
+var User = require('../html/server/User.js');
 var Authenticator = require('./Authenticator.js');
 
 module.exports = function(config) {

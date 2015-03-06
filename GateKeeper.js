@@ -20,7 +20,6 @@ var GateKeeperSettings = require('./GateKeeperSettings.js');
 var GateKeeperInfo = require('./html/server/GateKeeperInfo.js');
 
 
-
 var HTTPServer = require('./HTTPServer.js').init(GateKeeperInfo.webPort);
 
 // **** CLIENT COMMUNICATION ****
