@@ -86,8 +86,7 @@ module.exports = function(config) {
 		return false;
 	}
 
-	var newAuthToken = function(user) {
-		var email = user.email;
+	var newAuthToken = function(email) {
 		var salt = email.substring(email.length/3,email.length*2/3);
 		var date = (Date.now()+15*60*1000)+"";
 
@@ -100,7 +99,7 @@ module.exports = function(config) {
 			var id = auth.userStore.index;
 			if(auth.userStore.insert({id:id, email:email, hash: hash})) {
 				// go ahead and authenticate
-				var token = newAuthToken(matchingUsers[0].row);
+				var token = newAuthToken(email);
 				if(auth.tokenStore.insert({id:id, token:token})) {
 					return token;
 				}
@@ -112,7 +111,7 @@ module.exports = function(config) {
 	auth.loginUser = function(email, hash) {
 		var matchingUsers = auth.userStore.find({email:email, hash:hash}, 1);
 		if(matchingUsers.length == 1) {
-			var token = newAuthToken(matchingUsers[0].row);
+			var token = newAuthToken(email);
 			var id = matchingUsers[0].row.id;
 			var existingTokenRows = auth.tokenStore.find({id:id}, 1);
 			if(existingTokenRows.length == 1) {
