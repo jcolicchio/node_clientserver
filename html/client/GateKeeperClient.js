@@ -293,59 +293,49 @@ var GateKeeperClient = function() {
 						setCookie(AUTH, protocol.payload);
 						gk.private.authenticated = true;
 						gk.private.token = protocol.payload;
-						$('body').append("got token: "+protocol.payload);
 						updateNavBar(true);
 					} else {
 						// error authenticating
-						$('body').append("had trouble authenticating");
 						gk.private.authenticated = false;
-						updateNavBar(false);
+						//updateNavBar(false);
 						gk.private.token = null;
 						gk.private.user = null;
 
 						// click show login
-						$('#showlogin').click();
+						//$('#showlogin').click();
 					}
 				} else if(protocol.key == "Validate") {
 					if(protocol.payload) {
 						gk.private.authenticated = true;
 						updateNavBar(true);
-						$('body').append("validated! signed in!");
 					} else {
 						gk.private.authenticated = false;
-						updateNavBar(false);
+						//updateNavBar(false);
 						gk.private.token = null;
 						gk.private.user = null;
 						setCookie(AUTH, "");
-						$('body').append("had trouble validating");
 					}
 				} else if(protocol.key == "GetUser") {
 					if(protocol.payload) {
 						gk.private.user = protocol.payload;
 						// update UI?
-						$('body').append("got user: "+gk.private.user);
 					} else {
 						// couldn't get user?
-						$('body').append("couldn't get user");
 					}
 				} else if(protocol.key == "SetUser") {
 					if(protocol.payload) {
-						$('body').append("updated user");
 					} else {
-						$('body').append("failed to update user");
 					}
 				} else if(protocol.key == "Logout") {
 					// logout
 					if(protocol.payload) {
 						// logged out
 						setCookie(AUTH, "");
-						$('body').append("logged out");
 						gk.private.authenticated = false;
 						updateNavBar(false);
 						gk.private.token = null;
 						gk.private.user = null;
 					} else {
-						$('body').append("had trouble logging out");
 					}
 				} else {
 					console.log("unknown key/value "+protocol.key+"/"+protocol.payload+" sent from GateKeeper to client");

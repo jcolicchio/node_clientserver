@@ -1,5 +1,6 @@
 var User = require('../html/server/User.js');
 var Authenticator = require('./Authenticator.js');
+var CryptoJS = require('node-cryptojs-aes').CryptoJS;
 
 module.exports = function(config) {
 	var auth = Authenticator.new(config);
@@ -85,7 +86,7 @@ module.exports = function(config) {
 		return false;
 	}
 
-	var newAuthToken = function(){ return Date.now()+15*60*1000+"base64";};
+	var newAuthToken = function(){ return CryptoJS.MD5(Date.now()+15*60*1000+"").toString(); };
 
 	auth.registerUser = function(email, hash) {
 		var matchingUsers = auth.userStore.find({email: email}, 1);

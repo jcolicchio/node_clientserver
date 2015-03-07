@@ -33,14 +33,14 @@
 
 				$('#profile').show();
 				$('#warning').empty();
-				$('#name').val(gk.private.user.name);
-				$('#email').val(gk.private.user.email);
+				$('#profile #name').val(gk.private.user.name);
+				$('#profile #email').val(gk.private.user.email);
 			} else if(gk.private.token) {
 				gk.private.getUser(gk.private.token);
 			} else {
 				// clear the fields?
-				$('#name').val("");
-				$('#email').val("");
+				$('#profile #name').val("");
+				$('#profile #email').val("");
 				$('#profile').hide();
 				$('#warning').empty().append("Not logged in!");
 			}
