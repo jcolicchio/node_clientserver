@@ -1,0 +1,75 @@
+<html>
+
+	<head>
+		<link rel="stylesheet" type="text/css" href="./client/main.css" />
+
+		<script type="text/javascript" src="./client/jquery.min.js"></script>
+
+		<script type="text/javascript" src="./aes/aes.js"></script>
+		<script type="text/javascript" src="./aes/jsonformatter.js"></script>
+		<script type="text/javascript" src="./server/AES.js"></script>
+
+		<script type="text/javascript" src="./server/Protocol.js"></script>
+		<script type="text/javascript" src="./server/GateKeeperInfo.js"></script>
+		<script type="text/javascript" src="./server/ServerInfo.js"></script>
+		<script type="text/javascript" src="./server/User.js"></script>
+		<script type="text/javascript" src="./client/GateKeeperClient.js"></script>
+
+		<script type="text/javascript">
+		var gk = GateKeeperClient();
+		gk.connect();
+		var oldO = gk.private.gateKeeper.onopen;
+		var oldM = gk.private.gateKeeper.onmessage;
+		gk.private.gateKeeper.onopen = function() {
+			oldO();
+			if(gk.private.token) {
+				gk.private.getUser(gk.private.token);
+			}
+		};
+		gk.private.gateKeeper.onmessage = function(e) {
+			oldM(e);
+			if(gk.private.user) {
+				console.log("updating!");
+
+				$('#profile').show();
+				$('#warning').empty();
+				$('#name').val(gk.private.user.name);
+				$('#email').val(gk.private.user.email);
+			} else if(gk.private.token) {
+				gk.private.getUser(gk.private.token);
+			} else {
+				// clear the fields?
+				$('#name').val("");
+				$('#email').val("");
+				$('#profile').hide();
+				$('#warning').empty().append("Not logged in!");
+			}
+		};
+		$(document).ready(function() {
+			$('body').on('click', '#update', function() {
+				gk.private.user.name = $('#name').val();
+				gk.private.user.email = $('#email').val();
+				gk.private.setUser(gk.private.token, gk.private.user);
+			});
+			$('body').on('click', '#change', function() {
+				var currentHash = CryptoJS.MD5($('#current').val()).toString();
+				var newHash = CryptoJS.MD5($('#new').val()).toString();
+				gk.private.updatePassword(gk.private.token, currentHash, newHash);
+			});
+		});
+
+		</script>
+	</head>
+	<body>
+		<div id='warning'></div>
+		<div id='profile'>
+			Name: <input type='text' id='name' /><br/>
+			Email: <input type='text' id='email' /><br/>
+			<input type='submit' id='update' value='Update' /><br/>
+			------ Password ------ <br/>
+			Current Password: <input type='password' id='current' /><br/>
+			New Password: <input type='password' id='new' /><br/>
+			<input type='submit' id='change' value='Change Password' /><br/>
+		</div>
+	</body>
+</html>

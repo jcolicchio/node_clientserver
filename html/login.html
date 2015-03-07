@@ -18,8 +18,28 @@
 		<script type="text/javascript">
 		var gk = GateKeeperClient();
 		gk.connect();
+
+		$(document).ready(function(){
+
+			$('#login').on('click', function(){
+				var email = $('#email').val();
+				var hash = CryptoJS.MD5($('#password').val()).toString();
+				gk.private.login(email, hash);
+			});
+			$('#register').on('click', function(){
+				var email = $('#email').val();
+				var hash = CryptoJS.MD5($('#password').val()).toString();
+				gk.private.register(email, hash);
+			});
+		});
 		</script>
 	</head>
 	<body>
+		<br/>
+		<input type='text' id='email' /><br/>
+		<input type='password' id='password' /><br/>
+		<input type='submit' id='login' value='Log In' />
+		<input type='submit' id='register' value='Register' />
+		<div id='result'></div>
 	</body>
 </html>

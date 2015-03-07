@@ -8,6 +8,13 @@ module.exports = function(config) {
 	ds.data = {};
 
 	ds.find = function(params, limit) {
+		for(key in params) {
+			if(params[key] === undefined) {
+				// TODO: handle this better
+				console.log("ERROR: undefined property in params not allowed!");
+				return [];
+			}
+		}
 		if(limit === null || limit === undefined) {
 			limit = 0;
 		}
@@ -20,6 +27,7 @@ module.exports = function(config) {
 				if(params[key] !== undefined) {
 					if(this.data[i][key] !== params[key]) {
 						match = false;
+						//console.log("mismatch on "+key+": "+this.data[i][key]+" to params: "+params[key]);
 						break;
 					}
 				}
@@ -38,6 +46,13 @@ module.exports = function(config) {
 		return output;
 	}
 	ds.insert = function(row) {
+		for(key in row) {
+			if(row[key] === undefined) {
+				// TODO: handle this better
+				console.log("ERROR: undefined property in row not allowed!");
+				return false;
+			}
+		}
 		var insertedRow = {};
 		for(j in this.schema) {
 			var key = this.schema[j];
@@ -60,6 +75,7 @@ module.exports = function(config) {
 	}
 	ds.update = function(params, values, limit) {
 		var rows = this.find(params, limit);
+		var output = [];
 		for(i in rows) {
 			var index = rows[i].index;
 			var row = rows[i].row;
@@ -69,8 +85,9 @@ module.exports = function(config) {
 				}
 			}
 			this.data[index] = row;
+			output.push({index:index, row:row});
 		}
-		return this.find(params, limit);
+		return output;
 	}
 	return ds;
 }

@@ -61,10 +61,10 @@ var clientSocket = ws.createServer({port:GateKeeperInfo.clientPort}, function (c
 			// serialize serverItem list, maybe refresh it once? maybe refresh every 30 seconds or so?
 			var list = serverSocket.generateServerList();
 			connection.send(JSON.stringify(Protocol.new("ServerList", list)));
-		} else if(protocol.key == "Authenticate") {
+		} else if(protocol.key == "Validate") {
 			// the user has sent the GK its token for validation
 			connection.authenticated = authenticator.isValidToken(protocol.payload);
-			connection.send(JSON.stringify(Protocol.new("Authenticate", connection.authenticated)));
+			connection.send(JSON.stringify(Protocol.new("Validate", connection.authenticated)));
 		} else if(protocol.key == "Login") {
 			console.log(protocol.payload);
 			// the user has sent an email/hash combo, check it in the server
@@ -85,15 +85,15 @@ var clientSocket = ws.createServer({port:GateKeeperInfo.clientPort}, function (c
 			}
 			connection.send(JSON.stringify(Protocol.new("Logout", !connection.authenticated)));
 
-		} else if(protocol.key == "Update") {
+		} else if(protocol.key == "SetUser") {
 			// user, token
 			var user = protocol.payload.user;
 			var token = protocol.payload.token;
 			
-			connection.send(JSON.stringify(Protocol.new("Update", authenticator.updateUser(token, user))));
+			connection.send(JSON.stringify(Protocol.new("SetUser", authenticator.updateUser(token, user))));
 
 		} else if(protocol.key == "GetUser") {
-			connection.send(JSON.stringify(Protocol.new("User", authenticator.getUserForToken(protocol.payload))));
+			connection.send(JSON.stringify(Protocol.new("GetUser", authenticator.getUserForToken(protocol.payload))));
 
 		} else if(protocol.key == "Register") {
 			// email, hash
@@ -181,12 +181,12 @@ serverSocket.on('connection', function (socket) {
 
 			socket.serverItem = protocol.payload;
 
-		} else if(protocol.key == "Authenticate") {
+		} else if(protocol.key == "Validate") {
 			// the server is asking GK to validate a token sent by a user, do so now.
 			if(!authenticator) {
-				socket.send(JSON.stringify(Payload.new("Authenticate", true)));
+				socket.send(JSON.stringify(Payload.new("Validate", true)));
 			} else {
-				socket.send(JSON.stringify(Payload.new("Authenticate", authenticator.tokenIsValid(protocol.payload))));
+				socket.send(JSON.stringify(Payload.new("Validate", authenticator.tokenIsValid(protocol.payload))));
 			}
 		} else  {
 			console.log("unknown message type: "+protocol.key+" sent to gatekeeper from server, with payload: "+JSON.stringify(protocol.payload));

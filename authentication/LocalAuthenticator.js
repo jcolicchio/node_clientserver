@@ -66,13 +66,17 @@ module.exports = function(config) {
 	}
 
 	auth.updatePassword = function(token, currentHash, newHash) {
+		console.log("token: "+token);
 		var id = this.idForToken(token);
 		if(id !== false) {
+			console.log("id: "+id);
 			var user = this.userForId(id);
 			if(user !== false) {
 				if(user.hash == currentHash) {
+					console.log("trying to replace: "+user.email+"'s "+currentHash+" with "+newHash);
 					var updatedRows = auth.userStore.update(user, {hash: newHash}, 1);
 					if(updatedRows.length == 1) {
+						console.log("updated 1 row");
 						return true;
 					}
 				}
@@ -81,7 +85,7 @@ module.exports = function(config) {
 		return false;
 	}
 
-	var newAuthToken = function(){ return Date.now()+15*60*1000; };
+	var newAuthToken = function(){ return Date.now()+15*60*1000+"base64";};
 
 	auth.registerUser = function(email, hash) {
 		var matchingUsers = auth.userStore.find({email: email}, 1);

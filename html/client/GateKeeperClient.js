@@ -26,9 +26,72 @@ var Protocol = this['Protocol'];
 
 var AES = this['AES'];
 
+var gamesList = ["Chat", "Game", "DiceWars"];
+var makeNavBar = function(list, signedIn) {
+	var nav = $("<nav id='nav'>/</nav>");
+	for(key in list) {
+		var value = list[key];
+		nav.append(" <a href='/custom/"+value.toLowerCase()+"/'>"+value+"</a> /");
+	}
+	if(signedIn) {
+		nav.append(" <a href='/profile.html'>Profile</a> /");
+		nav.append(" <input id='logout' type='submit' value='Log Out' /> /");
+	} else {
+		nav.append(" <input id='showlogin' type='submit' value='Log In/Register' /> /");
+	}
+	return nav;
+}
+var updateNavBar = function(signedIn) {
+	$('#nav').remove();
+	$('body').prepend(makeNavBar(gamesList, signedIn));
+}
+$(document).ready(function() {
+	updateNavBar(false);
+	$('body').on('click', '#showlogin', function() {
+		// show login stuff
+		var loginArea = $('#loginarea');
+		if(loginArea.length > 0) {
+			loginArea.remove();
+		} else {
+			$('#nav').append("<div id='loginarea'>Email:<input id='email' name='email' type='text'/><br/>"+
+			"Password:<input id='password' name='password' type='password' /><br/>"+
+			"<input type='submit' id='login' value='Log In' /> <input type='submit' value='Register' id='register' /></div>");
+		}
+	});
+	$('body').on('click', '#login', function() {
+		// actually log in
+		var email = $('#email').val();
+		var hash = CryptoJS.MD5($('#password').val()).toString();
+		gk.private.login(email, hash);
+	});
+	$('body').on('click', '#register', function() {
+		// actually log in
+		var email = $('#email').val();
+		var hash = CryptoJS.MD5($('#password').val()).toString();
+		gk.private.register(email, hash);
+	});
+	$('body').on('click', '#logout', function() {
+		gk.private.logout(gk.private.token);
+	});
+});
+
 // var gk = GateKeeperClient();
 // gk.typeFilter = "Dicewars";
 // gk.server.onopen = function() { gk.server.send("message", "i joined!"); };
+
+var getCookie = function(token){
+	var cookie = document.cookie;
+	var index = cookie.indexOf(token);
+	if(index == -1) { return null; }
+	var start = cookie.substring(index+token.length+1);
+	index = start.indexOf(";");
+	if(index == -1) { return start; }
+	return start.substring(0, index);
+};
+var setCookie = function(token, value) {
+	document.cookie = token+"="+value+"; path=/";
+}
+var AUTH = "authToken";
 
 
 var GateKeeperClient = function() {
@@ -54,6 +117,30 @@ var GateKeeperClient = function() {
 		private: {
 			gateKeeper: null,
 			connected: false,
+			user: null,
+			authenticated: false,
+			token: null,
+			login: function(email, hash) {
+				gk.private.gateKeeper.send(JSON.stringify(Protocol.new("Login", {email:email,hash:hash})));
+			},
+			register: function(email, hash) {
+				gk.private.gateKeeper.send(JSON.stringify(Protocol.new("Register", {email:email,hash:hash})));
+			},
+			getUser: function(token) {
+				gk.private.gateKeeper.send(JSON.stringify(Protocol.new("GetUser", token)));
+			},
+			setUser: function(token, user) {
+				gk.private.gateKeeper.send(JSON.stringify(Protocol.new("SetUser", {token:token,user:user})));
+			},
+			logout: function(token) {
+				gk.private.gateKeeper.send(JSON.stringify(Protocol.new("Logout", token)));
+			},
+			validate: function(token) {
+				gk.private.gateKeeper.send(JSON.stringify(Protocol.new("Validate", token)));
+			},
+			updatePassword: function(token, currentHash, newHash) {
+				gk.private.gateKeeper.send(JSON.stringify(Protocol.new("UpdatePassword", {token:token,currentHash:currentHash,newHash:newHash})));
+			},
 			servers: [],
 			server: null,
 
@@ -168,6 +255,15 @@ var GateKeeperClient = function() {
 			this.private.gateKeeper.onopen = function() {
 				console.log("Connection to GK opened");
 				gk.connected = true;
+
+				// check for token
+				var token = getCookie(AUTH);
+				if(token) {
+					console.log("got token, try it!: "+token);
+					//we have token, send and try to authenticate
+					gk.private.validate(token);
+					gk.private.token = token;
+				}
 			}
 			this.private.gateKeeper.onclose = function() {
 				console.log("Connection to GK closed");
@@ -190,6 +286,66 @@ var GateKeeperClient = function() {
 						gk.private.serverList = gk.private.generateServerListElements(gk.private.servers);
 
 						$('body').append(gk.private.serverList);
+					}
+				} else if(protocol.key == "Login" || protocol.key == "Register") {
+					if(protocol.payload) {
+						// user now authenticated
+						setCookie(AUTH, protocol.payload);
+						gk.private.authenticated = true;
+						gk.private.token = protocol.payload;
+						$('body').append("got token: "+protocol.payload);
+						updateNavBar(true);
+					} else {
+						// error authenticating
+						$('body').append("had trouble authenticating");
+						gk.private.authenticated = false;
+						updateNavBar(false);
+						gk.private.token = null;
+						gk.private.user = null;
+
+						// click show login
+						$('#showlogin').click();
+					}
+				} else if(protocol.key == "Validate") {
+					if(protocol.payload) {
+						gk.private.authenticated = true;
+						updateNavBar(true);
+						$('body').append("validated! signed in!");
+					} else {
+						gk.private.authenticated = false;
+						updateNavBar(false);
+						gk.private.token = null;
+						gk.private.user = null;
+						setCookie(AUTH, "");
+						$('body').append("had trouble validating");
+					}
+				} else if(protocol.key == "GetUser") {
+					if(protocol.payload) {
+						gk.private.user = protocol.payload;
+						// update UI?
+						$('body').append("got user: "+gk.private.user);
+					} else {
+						// couldn't get user?
+						$('body').append("couldn't get user");
+					}
+				} else if(protocol.key == "SetUser") {
+					if(protocol.payload) {
+						$('body').append("updated user");
+					} else {
+						$('body').append("failed to update user");
+					}
+				} else if(protocol.key == "Logout") {
+					// logout
+					if(protocol.payload) {
+						// logged out
+						setCookie(AUTH, "");
+						$('body').append("logged out");
+						gk.private.authenticated = false;
+						updateNavBar(false);
+						gk.private.token = null;
+						gk.private.user = null;
+					} else {
+						$('body').append("had trouble logging out");
 					}
 				} else {
 					console.log("unknown key/value "+protocol.key+"/"+protocol.payload+" sent from GateKeeper to client");

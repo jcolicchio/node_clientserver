@@ -18,8 +18,23 @@
 		<script type="text/javascript">
 		var gk = GateKeeperClient();
 		gk.connect();
+		var oldO = gk.private.gateKeeper.onopen;
+		var oldM = gk.private.gateKeeper.onmessage;
+		gk.private.gateKeeper.onopen = function() {
+			oldO();
+			gk.private.logout(gk.private.token);
+		}
+		gk.private.gateKeeper.onmessage = function(e) {
+			oldM(e);
+			if(!gk.private.authenticated) {
+				window.location.href = "/";
+			}
+		}
 		</script>
 	</head>
 	<body>
+		<br/>
+
+		<div id='result'></div>
 	</body>
 </html>
